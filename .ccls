@@ -1,0 +1,32 @@
+clang
+
+%c -std=gnu99 -Wpointer-arith -Wno-implicit-function-declaration -Wl,-EL -fno-inline-functions -nostdlib -Os -mlongcalls -mtext-section-literals -falign-functions=4 -U__STRICT_ANSI__ -ffunction-sections -fdata-sections
+%cpp -fno-rtti -fno-exceptions -std=c++11 -Os -mlongcalls -mtext-section-literals -falign-functions=4 -U__STRICT_ANSI__ -ffunction-sections -fdata-sections
+
+-I/Users/tikhon/projects/telepat-pill-dispenser/include
+-I/Users/tikhon/projects/telepat-pill-dispenser/src
+-I/Users/tikhon/.platformio/packages/framework-esp8266-rtos-sdk/include
+-I/Users/tikhon/.platformio/packages/framework-esp8266-rtos-sdk/extra_include
+-I/Users/tikhon/.platformio/packages/framework-esp8266-rtos-sdk/driver_lib/include
+-I/Users/tikhon/.platformio/packages/framework-esp8266-rtos-sdk/include/espressif
+-I/Users/tikhon/.platformio/packages/framework-esp8266-rtos-sdk/include/lwip
+-I/Users/tikhon/.platformio/packages/framework-esp8266-rtos-sdk/include/lwip/ipv4
+-I/Users/tikhon/.platformio/packages/framework-esp8266-rtos-sdk/include/lwip/ipv6
+-I/Users/tikhon/.platformio/packages/framework-esp8266-rtos-sdk/include/nopoll
+-I/Users/tikhon/.platformio/packages/framework-esp8266-rtos-sdk/include/spiffs
+-I/Users/tikhon/.platformio/packages/framework-esp8266-rtos-sdk/include/ssl
+-I/Users/tikhon/.platformio/packages/framework-esp8266-rtos-sdk/include/json
+-I/Users/tikhon/.platformio/packages/framework-esp8266-rtos-sdk/include/openssl
+-I/Users/tikhon/.platformio/packages/toolchain-xtensa@1.40802.0/xtensa-lx106-elf/include/c++/4.8.2
+-I/Users/tikhon/.platformio/packages/toolchain-xtensa@1.40802.0/xtensa-lx106-elf/include/c++/4.8.2/xtensa-lx106-elf
+-I/Users/tikhon/.platformio/packages/toolchain-xtensa@1.40802.0/lib/gcc/xtensa-lx106-elf/4.8.2/include
+-I/Users/tikhon/.platformio/packages/toolchain-xtensa@1.40802.0/lib/gcc/xtensa-lx106-elf/4.8.2/include-fixed
+-I/Users/tikhon/.platformio/packages/toolchain-xtensa@1.40802.0/xtensa-lx106-elf/include
+
+-DPLATFORMIO=60116
+-DESP8266
+-DARDUINO_ARCH_ESP8266
+-DARDUINO_ESP8266_WEMOS_D1MINI
+-DF_CPU=80000000L
+-D__ets__
+-DICACHE_FLASH
