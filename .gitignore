@@ -47,3 +47,4 @@
 .cache/
 .pio/
 build/
+sdkconfig.old
