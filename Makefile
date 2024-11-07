@@ -12,3 +12,4 @@ monitor:
 clean:
 	idf.py fullclean
 
+.PHONY: all build flash monitor clean
