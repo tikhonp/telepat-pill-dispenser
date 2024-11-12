@@ -1,9 +1,4 @@
-#include "driver/gpio.h"
-#include "esp_log.h"
-#include "freertos/FreeRTOS.h" // IWYU pragma: export
-
-#include "secrets.h"
-#include "wifi_connection.h"
+#include "http_request.h"
 
 #include "esp_http_client.h"
 #include "esp_log.h"
@@ -11,17 +6,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/param.h>
-#include <sys/types.h>
 
-#define TAG "telepat-pill-dispenser"
-
-#define LED_PIN 2
+#define TAG "http_request"
 
 #define MAX_HTTP_OUTPUT_BUFFER 2048
 
 #define HTTP_ENDPOINT "192.168.2.246"
 
-esp_err_t _http_event_handler(esp_http_client_event_t *evt) {
+static esp_err_t _http_event_handler(esp_http_client_event_t *evt) {
 
     static char *output_buffer; // Buffer to store response of http request from
                                 // event handler
@@ -129,7 +121,7 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt) {
     return ESP_OK;
 }
 
-static void http_rest_with_url(void) {
+void http_rest_with_url(void) {
 
     // Declare local_response_buffer with size (MAX_HTTP_OUTPUT_BUFFER + 1) to
     // prevent out of bound access when it is used by functions like strlen().
@@ -168,35 +160,72 @@ static void http_rest_with_url(void) {
     ESP_LOG_BUFFER_HEX(TAG, local_response_buffer,
                        strlen(local_response_buffer));
 
-    esp_http_client_cleanup(client);
-}
-
-static void http_test_task(void *pvParameters) {
-    http_rest_with_url();
-    vTaskDelete(NULL);
-}
-
-void app_main(void) {
-    connect_to_ap();
-
-    /*status = connect_tcp_server();*/
-    /*if (TCP_SUCCESS != status) {*/
-    /*    ESP_LOGI(TAG, "Failed to connect to remote server, dying...");*/
-    /*    return;*/
+    /*// POST*/
+    /*const char *post_data = "{\"field1\":\"value1\"}";*/
+    /*esp_http_client_set_url(client, "http://" HTTP_ENDPOINT "/post");*/
+    /*esp_http_client_set_method(client, HTTP_METHOD_POST);*/
+    /*esp_http_client_set_header(client, "Content-Type", "application/json");*/
+    /*esp_http_client_set_post_field(client, post_data, strlen(post_data));*/
+    /*err = esp_http_client_perform(client);*/
+    /*if (err == ESP_OK) {*/
+    /*    ESP_LOGI(TAG, "HTTP POST Status = %d, content_length = %" PRId64,*/
+    /*             esp_http_client_get_status_code(client),*/
+    /*             esp_http_client_get_content_length(client));*/
+    /*} else {*/
+    /*    ESP_LOGE(TAG, "HTTP POST request failed: %s", esp_err_to_name(err));*/
+    /*}*/
+    /**/
+    /*// PUT*/
+    /*esp_http_client_set_url(client, "http://" HTTP_ENDPOINT "/put");*/
+    /*esp_http_client_set_method(client, HTTP_METHOD_PUT);*/
+    /*err = esp_http_client_perform(client);*/
+    /*if (err == ESP_OK) {*/
+    /*    ESP_LOGI(TAG, "HTTP PUT Status = %d, content_length = %" PRId64,*/
+    /*             esp_http_client_get_status_code(client),*/
+    /*             esp_http_client_get_content_length(client));*/
+    /*} else {*/
+    /*    ESP_LOGE(TAG, "HTTP PUT request failed: %s", esp_err_to_name(err));*/
+    /*}*/
+    /**/
+    /*// PATCH*/
+    /*esp_http_client_set_url(client, "http://" HTTP_ENDPOINT "/patch");*/
+    /*esp_http_client_set_method(client, HTTP_METHOD_PATCH);*/
+    /*esp_http_client_set_post_field(client, NULL, 0);*/
+    /*err = esp_http_client_perform(client);*/
+    /*if (err == ESP_OK) {*/
+    /*    ESP_LOGI(TAG, "HTTP PATCH Status = %d, content_length = %" PRId64,*/
+    /*             esp_http_client_get_status_code(client),*/
+    /*             esp_http_client_get_content_length(client));*/
+    /*} else {*/
+    /*    ESP_LOGE(TAG, "HTTP PATCH request failed: %s", esp_err_to_name(err));*/
+    /*}*/
+    /**/
+    /*// DELETE*/
+    /*esp_http_client_set_url(client,*/
+    /*                        "http://" HTTP_ENDPOINT "/delete");*/
+    /*esp_http_client_set_method(client, HTTP_METHOD_DELETE);*/
+    /*err = esp_http_client_perform(client);*/
+    /*if (err == ESP_OK) {*/
+    /*    ESP_LOGI(TAG, "HTTP DELETE Status = %d, content_length = %" PRId64,*/
+    /*             esp_http_client_get_status_code(client),*/
+    /*             esp_http_client_get_content_length(client));*/
+    /*} else {*/
+    /*    ESP_LOGE(TAG, "HTTP DELETE request failed: %s", esp_err_to_name(err));*/
+    /*}*/
+    /**/
+    /*// HEAD*/
+    /*esp_http_client_set_url(client,*/
+    /*                        "http://" HTTP_ENDPOINT "/get");*/
+    /*esp_http_client_set_method(client, HTTP_METHOD_HEAD);*/
+    /*err = esp_http_client_perform(client);*/
+    /*if (err == ESP_OK) {*/
+    /*    ESP_LOGI(TAG, "HTTP HEAD Status = %d, content_length = %" PRId64,*/
+    /*             esp_http_client_get_status_code(client),*/
+    /*             esp_http_client_get_content_length(client));*/
+    /*} else {*/
+    /*    ESP_LOGE(TAG, "HTTP HEAD request failed: %s", esp_err_to_name(err));*/
     /*}*/
 
-    xTaskCreate(&http_test_task, "http_test_task", 8192, NULL, 5, NULL);
-
-    ESP_LOGI(TAG, "Hello world!");
-
-    gpio_reset_pin(LED_PIN);
-    gpio_set_direction(LED_PIN, GPIO_MODE_OUTPUT);
-
-    while (1) {
-        gpio_set_level(LED_PIN, 1);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-        gpio_set_level(LED_PIN, 0);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
+    esp_http_client_cleanup(client);
 }
 

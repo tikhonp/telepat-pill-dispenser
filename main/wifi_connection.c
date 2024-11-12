@@ -1,11 +1,8 @@
 #include "wifi_connection.h"
 
-#include "esp_err.h"
 #include "esp_log.h"
 #include "esp_wifi.h"
 #include "nvs_flash.h"
-
-#include "secrets.h"
 
 #define WIFI_SUCCESS 1 << 0
 #define WIFI_FAILURE 1 << 1
@@ -117,7 +114,7 @@ esp_err_t connect_wifi() {
     return status;
 }
 
-esp_err_t connect_to_appppp() {
+esp_err_t connect_to_ap() {
     esp_err_t status = WIFI_FAILURE;
 
     esp_err_t ret = nvs_flash_init();
