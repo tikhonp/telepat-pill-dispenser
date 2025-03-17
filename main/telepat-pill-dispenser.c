@@ -1,3 +1,4 @@
+#include "button.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h" // IWYU pragma: export
@@ -31,6 +32,7 @@ void app_main(void) {
 #if !CONFIG_IDF_TARGET_LINUX
     init_cells();
 #endif
+    button_init();
 
     // Initialize NVS
     esp_err_t ret = nvs_flash_init();

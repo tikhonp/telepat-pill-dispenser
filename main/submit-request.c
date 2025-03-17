@@ -1,18 +1,16 @@
+#include "esp_err.h"
 #include "esp_http_client.h"
 #include "esp_log.h"
 #include "esp_tls.h"
-#include "freertos/FreeRTOS.h" // IWYU pragma: export
-#include "freertos/task.h"
 #include "sdkconfig.h"
 #include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/param.h>
 
 #define MAX_HTTP_RECV_BUFFER 512
 #define MAX_HTTP_OUTPUT_BUFFER 2048
+#define BITMASK(start, length) ((uint32_t)0xffffffff >> (32 - length)) << start
+#define REQUEST_BODY_BUFFER_SIZE 50
 
-static const char *TAG = "GET_SCHEDULE_HTTP_REQUEST";
+static const char *TAG = "SUBMIT_PILLS_REQUEST";
 
 /* Root cert for howsmyssl.com, taken from howsmyssl_com_root_cert.pem
 
@@ -28,25 +26,6 @@ extern const char howsmyssl_com_root_cert_pem_start[] asm(
     "_binary_howsmyssl_com_root_cert_pem_start");
 extern const char howsmyssl_com_root_cert_pem_end[] asm(
     "_binary_howsmyssl_com_root_cert_pem_end");
-
-static void (*timestamps_handler)(uint32_t *);
-
-void extract_timestamps(char *data_buffer, int buffer_length,
-                        uint32_t *timestamps, int timestamps_count) {
-    int buf_indx, timestamp_indx = 0;
-
-    for (buf_indx = 0;
-         buf_indx < buffer_length && timestamp_indx < timestamps_count;
-         buf_indx += 4) {
-        uint32_t timestamp;
-        timestamp = (uint32_t)data_buffer[buf_indx] << (3 * 8);
-        timestamp = timestamp | (data_buffer[buf_indx + 1] << (2 * 8));
-        timestamp = timestamp | (data_buffer[buf_indx + 2] << 8);
-        timestamp = timestamp | data_buffer[buf_indx + 3];
-
-        timestamps[timestamp_indx++] = timestamp;
-    }
-}
 
 esp_err_t _http_event_handler(esp_http_client_event_t *evt) {
     static char *output_buffer; // Buffer to store response of http request from
@@ -118,10 +97,6 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt) {
     case HTTP_EVENT_ON_FINISH:
         ESP_LOGD(TAG, "HTTP_EVENT_ON_FINISH");
         if (output_buffer != NULL) {
-            uint32_t timestamps[CONFIG_CELLS_COUNT];
-            extract_timestamps(output_buffer, output_len, timestamps,
-                               CONFIG_CELLS_COUNT);
-            timestamps_handler(timestamps);
             free(output_buffer);
             output_buffer = NULL;
         }
@@ -150,20 +125,31 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt) {
     return ESP_OK;
 }
 
-void fetch_schedule(void) {
-    char query[50];
-    sprintf(query, "cells_count=%d", CONFIG_CELLS_COUNT);
+static const char *ser_number = CONFIG_SERIAL_NUMBER;
+
+void create_body(uint32_t timestamp, uint8_t cell_indx, char *buffer,
+                 int buffer_length) {
+    uint32_t mask = BITMASK(0, 8);
+    buffer[0] = (uint8_t)(((timestamp) >> (3 * 8)) & mask);
+    buffer[1] = (uint8_t)(((timestamp) >> (2 * 8)) & mask);
+    buffer[2] = (uint8_t)(((timestamp) >> (1 * 8)) & mask);
+    buffer[3] = (uint8_t)(timestamp & mask);
+    buffer[4] = cell_indx;
+    strncpy(buffer + 5, ser_number, buffer_length - 5);
+}
+
+void submit_pills(const char *post_data) {
     esp_http_client_config_t config = {
         .host = CONFIG_HTTP_ENDPOINT,
-        .path = "/schedule",
-        .query = query,
+        .path = "/submit",
         .transport_type = HTTP_TRANSPORT_OVER_SSL,
         .event_handler = _http_event_handler,
         .cert_pem = howsmyssl_com_root_cert_pem_start,
     };
     esp_http_client_handle_t client = esp_http_client_init(&config);
+    esp_http_client_set_method(client, HTTP_METHOD_POST);
+    esp_http_client_set_post_field(client, post_data, strlen(post_data));
     esp_err_t err = esp_http_client_perform(client);
-
     if (err == ESP_OK) {
         ESP_LOGI(TAG, "HTTPS Status = %d, content_length = %" PRId64,
                  esp_http_client_get_status_code(client),
@@ -174,15 +160,21 @@ void fetch_schedule(void) {
     esp_http_client_cleanup(client);
 }
 
-void fetch_schedule_task(void *pvParameters) {
-    fetch_schedule();
+static uint32_t req_timestamp;
+static uint8_t req_cell_indx;
+
+void submit_pills_task(void *pvParameters) {
+    char post_buffer[REQUEST_BODY_BUFFER_SIZE];
+    create_body(req_timestamp, req_cell_indx, post_buffer, REQUEST_BODY_BUFFER_SIZE);
+    submit_pills(post_buffer);
     ESP_LOGI(TAG, "Finished");
 #if !CONFIG_IDF_TARGET_LINUX
     vTaskDelete(NULL);
 #endif
 }
 
-void run_fetch_schedule_task(void (*handler)(uint32_t *)) {
-    timestamps_handler = handler;
-    xTaskCreate(&fetch_schedule_task, "http_test_task", 16192, NULL, 5, NULL);
+void run_fetch_schedule_task(uint32_t timestamp, uint8_t cell_indx) {
+    req_timestamp = timestamp;
+    req_cell_indx = cell_indx;
+    xTaskCreate(&submit_pills_task, "submit-pills-task", 8192, NULL, 5, NULL);
 }

@@ -141,7 +141,6 @@ void tone(uint32_t freq, int duration_sec) {
     ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
     ESP_ERROR_CHECK(ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, LEDC_DUTY));
     ESP_ERROR_CHECK(ledc_update_duty(LEDC_MODE, LEDC_CHANNEL));
-
     vTaskDelay(duration_sec * 1000 / portTICK_PERIOD_MS);
     ESP_ERROR_CHECK(ledc_timer_pause(LEDC_MODE, LEDC_TIMER));
 }
