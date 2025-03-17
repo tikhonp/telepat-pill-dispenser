@@ -1,6 +1,5 @@
 #include "esp_event.h"
 #include "esp_log.h"
-#include "esp_netif.h"
 #include "freertos/FreeRTOS.h" // IWYU pragma: export
 #include "nvs_flash.h"
 #include "schedule-request.h"
@@ -10,6 +9,7 @@
 #include <stdint.h>
 #if !CONFIG_IDF_TARGET_LINUX
 #include "cells.h"
+#include "esp_netif.h"
 #include "wifi.h"
 #endif
 
@@ -40,7 +40,7 @@ void app_main(void) {
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
-    /*ESP_ERROR_CHECK(esp_netif_init());*/
+    ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
 #if !CONFIG_IDF_TARGET_LINUX

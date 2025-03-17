@@ -118,20 +118,10 @@ typedef enum {
 #define LEDC_OUTPUT_IO (5) // Define the output GPIO
 #define LEDC_CHANNEL LEDC_CHANNEL_0
 #define LEDC_DUTY_RES LEDC_TIMER_13_BIT // Set duty resolution to 13 bits
-#define LEDC_DUTY (4096) // Set duty to 50%. (2 ** 13) * 50% = 4096
-/*#define LEDC_FREQUENCY (4000) // Frequency in Hertz. Set frequency at 4 kHz*/
+#define LEDC_DUTY (4096)      // Set duty to 50%. (2 ** 13) * 50% = 4096
+#define LEDC_FREQUENCY (4000) // Frequency in Hertz. Set frequency at 4 kHz
 
-void tone(uint32_t freq, int duration_sec) {
-    // Prepare and then apply the LEDC PWM timer configuration
-    ledc_timer_config_t ledc_timer = {.speed_mode = LEDC_MODE,
-                                      .timer_num = LEDC_TIMER,
-                                      .duty_resolution = LEDC_DUTY_RES,
-                                      .freq_hz =
-                                          freq, // Set output frequency at 4 kHz
-                                      .clk_cfg = LEDC_AUTO_CLK};
-    ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
-
-    // Prepare and then apply the LEDC PWM channel configuration
+void buzzer_channel_init() {
     ledc_channel_config_t ledc_channel = {.speed_mode = LEDC_MODE,
                                           .channel = LEDC_CHANNEL,
                                           .timer_sel = LEDC_TIMER,
@@ -140,12 +130,20 @@ void tone(uint32_t freq, int duration_sec) {
                                           .duty = 0, // Set duty to 0%
                                           .hpoint = 0};
     ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel));
+}
+
+void tone(uint32_t freq, int duration_sec) {
+    ledc_timer_config_t ledc_timer = {.speed_mode = LEDC_MODE,
+                                      .timer_num = LEDC_TIMER,
+                                      .duty_resolution = LEDC_DUTY_RES,
+                                      .freq_hz = freq,
+                                      .clk_cfg = LEDC_AUTO_CLK};
+    ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
     ESP_ERROR_CHECK(ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, LEDC_DUTY));
     ESP_ERROR_CHECK(ledc_update_duty(LEDC_MODE, LEDC_CHANNEL));
+
     vTaskDelay(duration_sec * 1000 / portTICK_PERIOD_MS);
     ESP_ERROR_CHECK(ledc_timer_pause(LEDC_MODE, LEDC_TIMER));
-    /*ledc_set_freq(LEDC_MODE, LEDC_TIMER, 2500);*/
-    /*ledc_set_freq(LEDC_MODE, LEDC_TIMER, 0);*/
 }
 
 void init_cells() {
@@ -153,6 +151,7 @@ void init_cells() {
         gpio_reset_pin(ZERO_CELL_PIN + i);
         gpio_set_direction(ZERO_CELL_PIN + i, GPIO_MODE_OUTPUT);
     }
+    buzzer_channel_init();
 }
 
 void enable_cell(int indx) {

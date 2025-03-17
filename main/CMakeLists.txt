@@ -7,7 +7,7 @@ endif()
 
 set(sources "telepat-pill-dispenser.c" "schedule-request.c" "protocols-common.c" "schedule-storage.c" "scheduler.c")
 if (NOT ${target} STREQUAL "linux")
-    list(APPEND "cells.c" "wifi.c")
+    list(APPEND sources "cells.c" "wifi.c")
 endif()
 
 idf_component_register(SRCS ${sources} REQUIRES ${requires} INCLUDE_DIRS "." EMBED_TXTFILES howsmyssl_com_root_cert.pem)
