@@ -118,17 +118,17 @@ typedef enum {
 #define LEDC_OUTPUT_IO (5) // Define the output GPIO
 #define LEDC_CHANNEL LEDC_CHANNEL_0
 #define LEDC_DUTY_RES LEDC_TIMER_13_BIT // Set duty resolution to 13 bits
-#define LEDC_DUTY (4096)      // Set duty to 50%. (2 ** 13) * 50% = 4096
+#define LEDC_DUTY (4096) // Set duty to 50%. (2 ** 13) * 50% = 4096
 /*#define LEDC_FREQUENCY (4000) // Frequency in Hertz. Set frequency at 4 kHz*/
 
 void tone(uint32_t freq, int duration_sec) {
     // Prepare and then apply the LEDC PWM timer configuration
-    ledc_timer_config_t ledc_timer = {
-        .speed_mode = LEDC_MODE,
-        .timer_num = LEDC_TIMER,
-        .duty_resolution = LEDC_DUTY_RES,
-        .freq_hz = freq, // Set output frequency at 4 kHz
-        .clk_cfg = LEDC_AUTO_CLK};
+    ledc_timer_config_t ledc_timer = {.speed_mode = LEDC_MODE,
+                                      .timer_num = LEDC_TIMER,
+                                      .duty_resolution = LEDC_DUTY_RES,
+                                      .freq_hz =
+                                          freq, // Set output frequency at 4 kHz
+                                      .clk_cfg = LEDC_AUTO_CLK};
     ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
 
     // Prepare and then apply the LEDC PWM channel configuration

@@ -48,3 +48,6 @@
 .pio/
 build/
 sdkconfig.old
+sdkconfig
+
+dependencies.lock

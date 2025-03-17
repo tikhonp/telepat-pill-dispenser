@@ -17,12 +17,14 @@ void retrieve_time() {
     struct timeval tv;
     gettimeofday(&tv, NULL);
 
+#if !CONFIG_IDF_TARGET_LINUX
     for (int i = 0; i < CONFIG_CELLS_COUNT; i++)
         if ((schedule_get(i) - (uint32_t)tv.tv_sec) < 15) {
             enable_cell(i);
         } else {
             disable_cell(i);
         }
+#endif
 
     /*time_t now;*/
     /*char strftime_buf[64];*/
@@ -39,11 +41,13 @@ void retrieve_time() {
 }
 
 void sync_time() {
+#if !CONFIG_IDF_TARGET_LINUX
     esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG("pool.ntp.org");
     esp_netif_sntp_init(&config);
     if (esp_netif_sntp_sync_wait(pdMS_TO_TICKS(10000)) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to update system time within 10s timeout");
     }
+#endif
 }
 
 void scheduler_task(void *pvParameters) {

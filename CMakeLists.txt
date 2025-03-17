@@ -4,6 +4,10 @@
 # CMakeLists in this exact order for cmake to work correctly
 cmake_minimum_required(VERSION 3.16)
 
+if("${IDF_TARGET}" STREQUAL "linux")
+    set(COMPONENTS main)
+endif()
+
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
 # "Trim" the build. Include the minimal set of components, main, and anything it depends on.

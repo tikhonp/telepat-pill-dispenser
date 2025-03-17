@@ -5,11 +5,13 @@
 #include "nvs_flash.h"
 #include "schedule-request.h"
 #include "schedule-storage.h"
-#include "sdkconfig.h"
-#include "wifi.h"
-#include <stdint.h>
 #include "scheduler.h"
+#include "sdkconfig.h"
+#include <stdint.h>
+#if !CONFIG_IDF_TARGET_LINUX
 #include "cells.h"
+#include "wifi.h"
+#endif
 
 #define TAG "telepat-pill-dispenser"
 
@@ -26,7 +28,9 @@ void app_main(void) {
     ESP_LOGI(TAG, "Hello world!");
 
     init_schedule();
+#if !CONFIG_IDF_TARGET_LINUX
     init_cells();
+#endif
 
     // Initialize NVS
     esp_err_t ret = nvs_flash_init();
@@ -36,11 +40,13 @@ void app_main(void) {
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
-    ESP_ERROR_CHECK(esp_netif_init());
+    /*ESP_ERROR_CHECK(esp_netif_init());*/
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
+#if !CONFIG_IDF_TARGET_LINUX
     ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
     wifi_init_sta();
+#endif
     sync_time();
 
     run_fetch_schedule_task(&schedule_handler);
