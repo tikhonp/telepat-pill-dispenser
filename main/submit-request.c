@@ -3,6 +3,7 @@
 #include "esp_log.h"
 #include "esp_tls.h"
 #include "sdkconfig.h"
+#include <cstdlib>
 #include <stdint.h>
 
 #define MAX_HTTP_RECV_BUFFER 512
@@ -27,7 +28,8 @@ extern const char howsmyssl_com_root_cert_pem_start[] asm(
 extern const char howsmyssl_com_root_cert_pem_end[] asm(
     "_binary_howsmyssl_com_root_cert_pem_end");
 
-esp_err_t _http_event_handler(esp_http_client_event_t *evt) {
+esp_err_t _http_event_handler_submit(esp_http_client_event_t *evt) {
+    ESP_LOGI(TAG, "handler %d", evt->event_id);
     static char *output_buffer; // Buffer to store response of http request from
                                 // event handler
     static int output_len;      // Stores number of bytes read
@@ -143,7 +145,7 @@ void submit_pills(const char *post_data) {
         .host = CONFIG_HTTP_ENDPOINT,
         .path = "/submit",
         .transport_type = HTTP_TRANSPORT_OVER_SSL,
-        .event_handler = _http_event_handler,
+        .event_handler = _http_event_handler_submit,
         .cert_pem = howsmyssl_com_root_cert_pem_start,
     };
     esp_http_client_handle_t client = esp_http_client_init(&config);
@@ -158,14 +160,16 @@ void submit_pills(const char *post_data) {
         ESP_LOGE(TAG, "Error perform http request %s", esp_err_to_name(err));
     }
     esp_http_client_cleanup(client);
+    free((void*)post_data);
 }
 
 static uint32_t req_timestamp;
 static uint8_t req_cell_indx;
 
 void submit_pills_task(void *pvParameters) {
-    char post_buffer[REQUEST_BODY_BUFFER_SIZE];
-    create_body(req_timestamp, req_cell_indx, post_buffer, REQUEST_BODY_BUFFER_SIZE);
+    char *post_buffer = malloc(sizeof(char) * (REQUEST_BODY_BUFFER_SIZE + 1));
+    create_body(req_timestamp, req_cell_indx, post_buffer,
+                REQUEST_BODY_BUFFER_SIZE);
     submit_pills(post_buffer);
     ESP_LOGI(TAG, "Finished");
 #if !CONFIG_IDF_TARGET_LINUX

@@ -1,5 +1,8 @@
 #include "esp_log.h"
 #include "iot_button.h"
+#include "submit-request.h"
+#include <stdint.h>
+#include <sys/time.h>
 
 static const char *TAG = "BUTTON";
 
@@ -7,6 +10,11 @@ static const char *TAG = "BUTTON";
 
 static void button_single_click_cb(void *arg, void *usr_data) {
     ESP_LOGI(TAG, "BUTTON_SINGLE_CLICK");
+
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+
+    run_fetch_schedule_task((uint32_t)tv.tv_sec, 2);
 }
 
 void button_init() {
