@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stdint.h>
 
-void run_fetch_schedule_task(uint32_t timestamp, uint8_t cell_indx);
+void run_submit_pills_task(uint32_t timestamp, uint8_t cell_indx);

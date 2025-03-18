@@ -5,7 +5,7 @@ if(${target} STREQUAL "linux")
     list(APPEND requires esp_stubs esp_event esp-tls esp_http_client protocol_examples_common nvs_flash esp_netif esp_netif_stack)
 endif()
 
-set(sources "telepat-pill-dispenser.c" "schedule-request.c" "protocols-common.c" "schedule-storage.c" "scheduler.c" "button.c")
+set(sources "telepat-pill-dispenser.c" "schedule-request.c" "protocols-common.c" "schedule-storage.c" "scheduler.c" "button.c" "submit-request.c")
 if (NOT ${target} STREQUAL "linux")
     list(APPEND sources "cells.c" "wifi.c")
 endif()

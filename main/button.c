@@ -14,7 +14,7 @@ static void button_single_click_cb(void *arg, void *usr_data) {
     struct timeval tv;
     gettimeofday(&tv, NULL);
 
-    run_fetch_schedule_task((uint32_t)tv.tv_sec, 2);
+    run_submit_pills_task((uint32_t)tv.tv_sec, 2);
 }
 
 void button_init() {
