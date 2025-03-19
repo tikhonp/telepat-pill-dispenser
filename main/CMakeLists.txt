@@ -1,13 +1,27 @@
+set(requires esp-tls nvs_flash esp_event esp_netif esp_http_client esp_wifi)
+
 idf_build_get_property(target IDF_TARGET)
-
-set(requires "")
 if(${target} STREQUAL "linux")
-    list(APPEND requires esp_stubs esp_event esp-tls esp_http_client protocol_examples_common nvs_flash esp_netif esp_netif_stack)
+    list(
+    APPEND
+    requires
+    esp_stubs
+    protocol_examples_common
+    esp_netif_stack)
 endif()
 
-set(sources "telepat-pill-dispenser.c" "schedule-request.c" "schedule-storage.c" "scheduler.c" "button.c" "submit-request.c")
-if (NOT ${target} STREQUAL "linux")
-    list(APPEND sources "cells.c" "wifi.c")
+set(srcs "telepat-pill-dispenser.c" "schedule-request.c"
+            "schedule-storage.c" "scheduler.c" "button.c" "submit-request.c")
+if(NOT ${target} STREQUAL "linux")
+    list(APPEND srcs "cells.c" "wifi.c")
 endif()
 
-idf_component_register(SRCS ${sources} REQUIRES ${requires} INCLUDE_DIRS "." EMBED_TXTFILES howsmyssl_com_root_cert.pem)
+idf_component_register(
+  SRCS
+  ${srcs}
+  PRIV_REQUIRES
+  ${requires} global_manager
+  INCLUDE_DIRS
+  "."
+  EMBED_TXTFILES
+  howsmyssl_com_root_cert.pem)

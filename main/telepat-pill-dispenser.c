@@ -13,6 +13,7 @@
 #include "esp_netif.h"
 #include "wifi.h"
 #endif
+#include "init_global_manager.h"
 
 #define TAG "telepat-pill-dispenser"
 
@@ -27,6 +28,8 @@ void schedule_handler(uint32_t *timestamps) {
 
 void app_main(void) {
     ESP_LOGI(TAG, "Hello world!");
+
+    init_global_manager();
 
     init_schedule();
 #if !CONFIG_IDF_TARGET_LINUX
