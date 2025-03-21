@@ -40,16 +40,6 @@ void retrieve_time() {
     /*ESP_LOGI(TAG, "The current date/time in ??? is: %s", strftime_buf);*/
 }
 
-void sync_time() {
-#if !CONFIG_IDF_TARGET_LINUX
-    esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG("pool.ntp.org");
-    esp_netif_sntp_init(&config);
-    if (esp_netif_sntp_sync_wait(pdMS_TO_TICKS(10000)) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to update system time within 10s timeout");
-    }
-#endif
-}
-
 void scheduler_task(void *pvParameters) {
     while (1) {
         retrieve_time();

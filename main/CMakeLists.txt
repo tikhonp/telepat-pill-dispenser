@@ -13,14 +13,14 @@ endif()
 set(srcs "telepat-pill-dispenser.c" "schedule-request.c"
             "schedule-storage.c" "scheduler.c" "button.c" "submit-request.c")
 if(NOT ${target} STREQUAL "linux")
-    list(APPEND srcs "cells.c" "wifi.c")
+    list(APPEND srcs "cells.c")
 endif()
 
 idf_component_register(
   SRCS
   ${srcs}
   PRIV_REQUIRES
-  ${requires} global_manager
+  ${requires} global_manager wifi_manager
   INCLUDE_DIRS
   "."
   EMBED_TXTFILES

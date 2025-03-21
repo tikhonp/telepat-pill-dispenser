@@ -1,0 +1,47 @@
+#pragma once
+
+#include "esp_err.h"
+#include "esp_netif_types.h"
+#include "esp_wifi_types_generic.h"
+#include "sdkconfig.h"
+
+#define NETIF_DESC_STA "telepat_netif_sta"
+#if CONFIG_ESP_WIFI_SCAN_METHOD_FAST
+#define WIFI_SCAN_METHOD WIFI_FAST_SCAN
+#elif CONFIG_ESP_WIFI_SCAN_METHOD_ALL_CHANNEL
+#define WIFI_SCAN_METHOD WIFI_ALL_CHANNEL_SCAN
+#endif
+
+#if CONFIG_ESP_WIFI_CONNECT_AP_BY_SIGNAL
+#define WIFI_CONNECT_AP_SORT_METHOD WIFI_CONNECT_AP_BY_SIGNAL
+#elif CONFIG_ESP_WIFI_CONNECT_AP_BY_SECURITY
+#define WIFI_CONNECT_AP_SORT_METHOD WIFI_CONNECT_AP_BY_SECURITY
+#endif
+
+#if CONFIG_ESP_WIFI_AUTH_OPEN
+#define WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_OPEN
+#elif CONFIG_ESP_WIFI_AUTH_WEP
+#define WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WEP
+#elif CONFIG_ESP_WIFI_AUTH_WPA_PSK
+#define WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA_PSK
+#elif CONFIG_ESP_WIFI_AUTH_WPA2_PSK
+#define WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA2_PSK
+#elif CONFIG_ESP_WIFI_AUTH_WPA_WPA2_PSK
+#define WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA_WPA2_PSK
+#elif CONFIG_ESP_WIFI_AUTH_WPA2_ENTERPRISE
+#define WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA2_ENTERPRISE
+#elif CONFIG_ESP_WIFI_AUTH_WPA3_PSK
+#define WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA3_PSK
+#elif CONFIG_ESP_WIFI_AUTH_WPA2_WPA3_PSK
+#define WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA2_WPA3_PSK
+#elif CONFIG_ESP_WIFI_AUTH_WAPI_PSK
+#define WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WAPI_PSK
+#endif
+
+void wifi_start(void);
+void wifi_stop(void);
+esp_err_t wifi_sta_do_connect(wifi_config_t wifi_config, bool wait);
+esp_err_t wifi_sta_do_disconnect(void);
+bool is_our_netif(const char *prefix, esp_netif_t *netif);
+void wifi_shutdown(void);
+esp_err_t wifi_connect(void);
