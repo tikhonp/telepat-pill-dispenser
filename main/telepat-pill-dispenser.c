@@ -16,6 +16,7 @@
 #endif
 #include "init_global_manager.h"
 #include "medsenger_synced.h"
+#include "schedule_data.h"
 
 #define TAG "telepat-pill-dispenser"
 
@@ -49,11 +50,13 @@ static void main_flow(void) {
     }
 }
 
-void schedule_handler(uint32_t *timestamps) {
+void schedule_handler(sd_cell_schedule_t *schedule) {
     for (int i = 0; i < CONFIG_CELLS_COUNT; i++)
-        ESP_LOGI("HNDLR", "TIMESTAMP: %" PRIu32, timestamps[i]);
+        sd_print_cell_schedule(schedule[i]);
 
-    update_schedule(timestamps);
+    free(schedule);
+
+    /*update_schedule(timestamps);*/
 }
 
 void app_main(void) {
@@ -66,7 +69,9 @@ void app_main(void) {
     /*init_cells();*/
     /*button_init();*/
     /**/
-    /*run_fetch_schedule_task(&schedule_handler);*/
+    if (gm_get_medsenger_synced()) {
+        run_fetch_schedule_task(&schedule_handler);
+    }
     /*run_scheduler_task();*/
     /**/
 

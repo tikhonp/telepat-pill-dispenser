@@ -20,7 +20,7 @@ idf_component_register(
   SRCS
   ${srcs}
   PRIV_REQUIRES
-  ${requires} global_manager wifi_manager
+  ${requires} global_manager wifi_manager schedule_data
   INCLUDE_DIRS
   "."
   EMBED_TXTFILES

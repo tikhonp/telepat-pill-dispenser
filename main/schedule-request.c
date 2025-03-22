@@ -1,39 +1,22 @@
+#include "schedule-request.h"
 #include "esp_http_client.h"
 #include "esp_log.h"
 #include "esp_tls.h"
 #include "freertos/FreeRTOS.h" // IWYU pragma: export
 #include "freertos/task.h"
+#include "schedule_data.h"
 #include "sdkconfig.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/param.h>
-#include "schedule-request.h"
 
 #define MAX_HTTP_RECV_BUFFER 512
 #define MAX_HTTP_OUTPUT_BUFFER 2048
 
 static const char *TAG = "GET_SCHEDULE_HTTP_REQUEST";
 
-
-static void (*timestamps_handler)(uint32_t *);
-
-void extract_timestamps(char *data_buffer, int buffer_length,
-                        uint32_t *timestamps, int timestamps_count) {
-    int buf_indx, timestamp_indx = 0;
-
-    for (buf_indx = 0;
-         buf_indx < buffer_length && timestamp_indx < timestamps_count;
-         buf_indx += 4) {
-        uint32_t timestamp;
-        timestamp = (uint32_t)data_buffer[buf_indx] << (3 * 8);
-        timestamp = timestamp | (data_buffer[buf_indx + 1] << (2 * 8));
-        timestamp = timestamp | (data_buffer[buf_indx + 2] << 8);
-        timestamp = timestamp | data_buffer[buf_indx + 3];
-
-        timestamps[timestamp_indx++] = timestamp;
-    }
-}
+static void (*timestamps_handler)(sd_cell_schedule_t *);
 
 static esp_err_t _http_event_handler(esp_http_client_event_t *evt) {
     static char *output_buffer; // Buffer to store response of http request from
@@ -105,11 +88,8 @@ static esp_err_t _http_event_handler(esp_http_client_event_t *evt) {
     case HTTP_EVENT_ON_FINISH:
         ESP_LOGD(TAG, "HTTP_EVENT_ON_FINISH");
         if (output_buffer != NULL) {
-            uint32_t timestamps[CONFIG_CELLS_COUNT];
-            extract_timestamps(output_buffer, output_len, timestamps,
-                               CONFIG_CELLS_COUNT);
-            timestamps_handler(timestamps);
-            free(output_buffer);
+            timestamps_handler(sd_parse_schedule(output_buffer, output_len));
+            /*free(output_buffer);*/
             output_buffer = NULL;
         }
         output_len = 0;
@@ -124,7 +104,7 @@ static esp_err_t _http_event_handler(esp_http_client_event_t *evt) {
             ESP_LOGI(TAG, "Last mbedtls failure: 0x%x", mbedtls_err);
         }
         if (output_buffer != NULL) {
-            free(output_buffer);
+            /*free(output_buffer);*/
             output_buffer = NULL;
         }
         output_len = 0;
@@ -142,7 +122,7 @@ static void fetch_schedule(void) {
     sprintf(query, "cells_count=%d", CONFIG_CELLS_COUNT);
     esp_http_client_config_t config = {
         .host = CONFIG_HTTP_ENDPOINT,
-        .path = "/schedule",
+        .path = "/schedule/v2",
         .query = query,
         .transport_type = HTTP_TRANSPORT_OVER_SSL,
         .event_handler = _http_event_handler,
@@ -169,7 +149,7 @@ static void fetch_schedule_task(void *pvParameters) {
 #endif
 }
 
-void run_fetch_schedule_task(void (*handler)(uint32_t *)) {
+void run_fetch_schedule_task(void (*handler)(sd_cell_schedule_t *)) {
     timestamps_handler = handler;
     xTaskCreate(&fetch_schedule_task, "http_test_task", 16192, NULL, 5, NULL);
 }
