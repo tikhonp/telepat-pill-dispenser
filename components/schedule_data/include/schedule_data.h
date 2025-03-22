@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include "esp_err.h"
 
 #pragma pack(push, 1)
 /*
@@ -26,13 +27,26 @@ typedef struct {
 } sd_cell_schedule_t;
 #pragma pack(pop)
 
+void sd_init(void);
+
 /*
 Prints cell data for debug using ESP_LOGI.
 */
-void sd_print_cell_schedule(sd_cell_schedule_t cs);
+void sd_print_schedule(void);
 
 /*
-Converts array of bytes to array of cell schedules structs. 
-Returns pointer to same buffer just length check and cast under the hood. Output array size is CONFIG_SD_CELLS_COUNT
+Saves new schedule in RAM and in FLASH, errors if data is invalid length
 */
-sd_cell_schedule_t *sd_parse_schedule(char *buf, unsigned int buf_length);
+esp_err_t sd_save_schedule(char *buf, unsigned int buf_length);
+
+/*
+Load schedule from flash called in case of failed to fetch it from network.
+If err system must show global error to user.
+*/
+esp_err_t sd_load_schedule_from_flash(void);
+
+/*
+Get cell schedule for for specific cell indx
+Must be called after sd_save_schedule() or sd_load_schedule_from_flash()
+*/
+sd_cell_schedule_t get_schedule_by_cell_indx(int n);

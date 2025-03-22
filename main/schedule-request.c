@@ -16,7 +16,7 @@
 
 static const char *TAG = "GET_SCHEDULE_HTTP_REQUEST";
 
-static void (*timestamps_handler)(sd_cell_schedule_t *);
+static void (*timestamps_handler)(void);
 
 static esp_err_t _http_event_handler(esp_http_client_event_t *evt) {
     static char *output_buffer; // Buffer to store response of http request from
@@ -88,7 +88,8 @@ static esp_err_t _http_event_handler(esp_http_client_event_t *evt) {
     case HTTP_EVENT_ON_FINISH:
         ESP_LOGD(TAG, "HTTP_EVENT_ON_FINISH");
         if (output_buffer != NULL) {
-            timestamps_handler(sd_parse_schedule(output_buffer, output_len));
+            sd_save_schedule(output_buffer, output_len);
+            timestamps_handler();
             /*free(output_buffer);*/
             output_buffer = NULL;
         }
@@ -149,7 +150,7 @@ static void fetch_schedule_task(void *pvParameters) {
 #endif
 }
 
-void run_fetch_schedule_task(void (*handler)(sd_cell_schedule_t *)) {
+void run_fetch_schedule_task(void (*handler)(void)) {
     timestamps_handler = handler;
     xTaskCreate(&fetch_schedule_task, "http_test_task", 16192, NULL, 5, NULL);
 }

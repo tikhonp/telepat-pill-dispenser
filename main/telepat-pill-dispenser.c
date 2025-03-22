@@ -50,15 +50,6 @@ static void main_flow(void) {
     }
 }
 
-void schedule_handler(sd_cell_schedule_t *schedule) {
-    for (int i = 0; i < CONFIG_CELLS_COUNT; i++)
-        sd_print_cell_schedule(schedule[i]);
-
-    free(schedule);
-
-    /*update_schedule(timestamps);*/
-}
-
 void app_main(void) {
     ++boot_count;
     ESP_LOGI(TAG, "Boot count: %d", boot_count);
@@ -70,7 +61,7 @@ void app_main(void) {
     /*button_init();*/
     /**/
     if (gm_get_medsenger_synced()) {
-        run_fetch_schedule_task(&schedule_handler);
+        run_fetch_schedule_task(&sd_print_schedule);
     }
     /*run_scheduler_task();*/
     /**/

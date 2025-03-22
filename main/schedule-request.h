@@ -1,6 +1,5 @@
 #pragma once
 
-#include "schedule_data.h"
 #include <stdint.h>
 
 /* Root cert for howsmyssl.com, taken from howsmyssl_com_root_cert.pem
@@ -18,4 +17,4 @@ extern const char howsmyssl_com_root_cert_pem_start[] asm(
 extern const char howsmyssl_com_root_cert_pem_end[] asm(
     "_binary_howsmyssl_com_root_cert_pem_end");
 
-void run_fetch_schedule_task(void (*handler)(sd_cell_schedule_t *));
+void run_fetch_schedule_task(void (*handler)(void));
