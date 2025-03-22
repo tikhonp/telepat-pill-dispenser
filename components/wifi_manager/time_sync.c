@@ -5,11 +5,11 @@
 
 static const char *TAG = "time-sync";
 
-void time_sync_notification_cb(struct timeval *tv) {
+static void wm_time_sync_notification_cb(struct timeval *tv) {
     ESP_LOGI(TAG, "Notification of a time synchronization event");
 }
 
-static void print_servers(void) {
+static void wm_print_servers(void) {
     ESP_LOGI(TAG, "List of configured NTP servers:");
 
     for (uint8_t i = 0; i < SNTP_MAX_SERVERS; ++i) {
@@ -19,18 +19,15 @@ static void print_servers(void) {
     }
 }
 
-void obtain_time(void) {
+void wm_obtain_time(void) {
     ESP_LOGI(TAG, "Initializing and starting SNTP");
     esp_sntp_config_t config =
-        ESP_NETIF_SNTP_DEFAULT_CONFIG(CONFIG_SNTP_TIME_SERVER);
+        ESP_NETIF_SNTP_DEFAULT_CONFIG(CONFIG_WM_SNTP_TIME_SERVER);
     config.sync_cb =
-        time_sync_notification_cb; // Note: This is only needed if we want
-#ifdef CONFIG_SNTP_TIME_SYNC_METHOD_SMOOTH
-    config.smooth_sync = true;
-#endif
+        wm_time_sync_notification_cb; // Note: This is only needed if we want
 
     esp_netif_sntp_init(&config);
-    print_servers();
+    wm_print_servers();
 
     // wait for time to be set
     int retry = 0;

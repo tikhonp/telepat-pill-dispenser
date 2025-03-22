@@ -1,48 +1,34 @@
 menu "Time sync configuration"
-    config SNTP_TIME_SERVER
+    config WM_SNTP_TIME_SERVER
         string "SNTP server name"
         default "pool.ntp.org"
         help
             Hostname of the main SNTP server.
-
-    choice SNTP_TIME_SYNC_METHOD
-        prompt "Time synchronization method"
-        default SNTP_TIME_SYNC_METHOD_IMMED
-        help
-            Time synchronization method.
-
-        config SNTP_TIME_SYNC_METHOD_IMMED
-            bool "update time immediately when received"
-        config SNTP_TIME_SYNC_METHOD_SMOOTH
-            bool "update time with smooth method (adjtime)"
-        config SNTP_TIME_SYNC_METHOD_CUSTOM
-            bool "custom implementation"
-    endchoice
 endmenu
 
 menu "Wi-Fi connection configuration"
 
-    config ESP_WIFI_SSID
+    config WM_WIFI_SSID
         string "WiFi SSID"
         default "myssid"
         help
             SSID (network name) for the example to connect to.
 
-    config ESP_WIFI_PASSWORD
+    config WM_WIFI_PASSWORD
         string "WiFi Password"
         default "mypassword"
         help
             WiFi password (WPA or WPA2) for the example to use.
 
-    config ESP_WIFI_CONN_MAX_RETRY
+    config WM_WIFI_CONN_MAX_RETRY
         int "Maximum retry"
         default 6
         help
             Set the Maximum retry to avoid station reconnecting to the AP unlimited when the AP is really inexistent.
 
-    choice ESP_WIFI_SCAN_METHOD
+    choice WM_WIFI_SCAN_METHOD
         prompt "WiFi Scan Method"
-        default ESP_WIFI_SCAN_METHOD_FAST
+        default WM_WIFI_SCAN_METHOD_FAST
         help
             WiFi scan method:
 
@@ -50,14 +36,14 @@ menu "Wi-Fi connection configuration"
 
             If "All Channel" is selected, scan will end after scan all the channel.
 
-        config ESP_WIFI_SCAN_METHOD_FAST
+        config WM_WIFI_SCAN_METHOD_FAST
             bool "Fast"
-        config ESP_WIFI_SCAN_METHOD_ALL_CHANNEL
+        config WM_WIFI_SCAN_METHOD_ALL_CHANNEL
             bool "All Channel"
     endchoice
 
     menu "WiFi Scan threshold"
-        config ESP_WIFI_SCAN_RSSI_THRESHOLD
+        config WM_WIFI_SCAN_RSSI_THRESHOLD
             int "WiFi minimum rssi"
             range -127 0
 
@@ -65,36 +51,36 @@ menu "Wi-Fi connection configuration"
             help
                 The minimum rssi to accept in the scan mode.
 
-        choice ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD
+        choice WM_WIFI_SCAN_AUTH_MODE_THRESHOLD
             prompt "WiFi Scan auth mode threshold"
-            default ESP_WIFI_AUTH_OPEN
+            default WM_WIFI_AUTH_OPEN
             help
                 The weakest authmode to accept in the scan mode.
 
-            config ESP_WIFI_AUTH_OPEN
+            config WM_WIFI_AUTH_OPEN
                 bool "OPEN"
-            config ESP_WIFI_AUTH_WEP
+            config WM_WIFI_AUTH_WEP
                 bool "WEP"
-            config ESP_WIFI_AUTH_WPA_PSK
+            config WM_WIFI_AUTH_WPA_PSK
                 bool "WPA PSK"
-            config ESP_WIFI_AUTH_WPA2_PSK
+            config WM_WIFI_AUTH_WPA2_PSK
                 bool "WPA2 PSK"
-            config ESP_WIFI_AUTH_WPA_WPA2_PSK
+            config WM_WIFI_AUTH_WPA_WPA2_PSK
                 bool "WPA WPA2 PSK"
-            config ESP_WIFI_AUTH_WPA2_ENTERPRISE
+            config WM_WIFI_AUTH_WPA2_ENTERPRISE
                 bool "WPA2 ENTERPRISE"
-            config ESP_WIFI_AUTH_WPA3_PSK
+            config WM_WIFI_AUTH_WPA3_PSK
                 bool "WPA3 PSK"
-            config ESP_WIFI_AUTH_WPA2_WPA3_PSK
+            config WM_WIFI_AUTH_WPA2_WPA3_PSK
                 bool "WPA2 WPA3 PSK"
-            config ESP_WIFI_AUTH_WAPI_PSK
+            config WM_WIFI_AUTH_WAPI_PSK
                 bool "WAPI PSK"
         endchoice
     endmenu
 
-    choice ESP_WIFI_CONNECT_AP_SORT_METHOD
+    choice WM_WIFI_CONNECT_AP_SORT_METHOD
         prompt "WiFi Connect AP Sort Method"
-        default ESP_WIFI_CONNECT_AP_BY_SIGNAL
+        default WM_WIFI_CONNECT_AP_BY_SIGNAL
         help
             WiFi connect AP sort method:
 
@@ -102,9 +88,9 @@ menu "Wi-Fi connection configuration"
 
             If "Security" is selected, Sort matched APs in scan list by security mode.
 
-        config ESP_WIFI_CONNECT_AP_BY_SIGNAL
+        config WM_WIFI_CONNECT_AP_BY_SIGNAL
             bool "Signal"
-        config ESP_WIFI_CONNECT_AP_BY_SECURITY
+        config WM_WIFI_CONNECT_AP_BY_SECURITY
             bool "Security"
     endchoice
 endmenu

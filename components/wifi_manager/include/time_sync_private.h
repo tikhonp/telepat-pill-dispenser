@@ -1,3 +1,3 @@
 #pragma once
 
-void obtain_time(void);
+void wm_obtain_time(void);
