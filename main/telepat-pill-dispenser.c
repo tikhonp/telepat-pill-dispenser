@@ -41,10 +41,10 @@ static void main_flow(void) {
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-    init_global_manager();
+    gm_init();
 
     if (wm_connect() != ESP_OK) {
-        set_medsenger_synced(false);
+        gm_set_medsenger_synced(false);
         ESP_LOGI(TAG, "Failed to connect to wi-fi");
     }
 }
