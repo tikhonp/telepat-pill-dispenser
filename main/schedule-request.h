@@ -17,4 +17,5 @@ extern const char howsmyssl_com_root_cert_pem_start[] asm(
 extern const char howsmyssl_com_root_cert_pem_end[] asm(
     "_binary_howsmyssl_com_root_cert_pem_end");
 
-void run_fetch_schedule_task(void (*handler)(void));
+void run_fetch_schedule_task(void (*handler)(char *buf,
+                                             unsigned int buf_length));

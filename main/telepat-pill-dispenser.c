@@ -3,6 +3,7 @@
 #include "esp_event.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h" // IWYU pragma: export
+#include "hal/gpio_types.h"
 #include "nvs_flash.h"
 #include "schedule-request.h"
 #include "schedule-storage.h"
@@ -42,12 +43,24 @@ static void main_flow(void) {
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
+    sd_init();
     gm_init();
 
     if (wm_connect() != ESP_OK) {
         gm_set_medsenger_synced(false);
         ESP_LOGI(TAG, "Failed to connect to wi-fi");
+
+        ESP_ERROR_CHECK(sd_load_schedule_from_flash());
+        sd_print_schedule();
     }
+}
+
+static void fetch_schedule_handler(char *buf, unsigned int buf_length) {
+    ESP_ERROR_CHECK(sd_save_schedule(buf, buf_length));
+    sd_print_schedule();
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    ESP_ERROR_CHECK(sd_load_schedule_from_flash());
+    sd_print_schedule();
 }
 
 void app_main(void) {
@@ -61,7 +74,7 @@ void app_main(void) {
     /*button_init();*/
     /**/
     if (gm_get_medsenger_synced()) {
-        run_fetch_schedule_task(&sd_print_schedule);
+        run_fetch_schedule_task(&fetch_schedule_handler);
     }
     /*run_scheduler_task();*/
     /**/
