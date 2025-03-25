@@ -19,7 +19,7 @@ static void _submit(void *params) {
 
 static void button_single_click_cb(void *arg, void *usr_data) {
     ESP_LOGI(TAG, "BUTTON_SINGLE_CLICK");
-    xTaskCreate(&_submit, "submit-pills-task", 8192, NULL, 5, NULL);
+    xTaskCreate(&_submit, "submit-pills-task", 8192, NULL, 1, NULL);
 }
 
 void button_init() {

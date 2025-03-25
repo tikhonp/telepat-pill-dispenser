@@ -54,5 +54,5 @@ void scheduler_task(void *pvParameters) {
 }
 
 void run_scheduler_task() {
-    xTaskCreate(&scheduler_task, "http_test_task", 8192, NULL, 5, NULL);
+    xTaskCreate(&scheduler_task, "http_test_task", 8192, NULL, 1, NULL);
 }

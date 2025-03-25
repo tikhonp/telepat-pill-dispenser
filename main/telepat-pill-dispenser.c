@@ -1,4 +1,5 @@
 #include "button.h"
+#include "buzzer.h"
 #include "cells.h"
 #include "connect.h"
 #include "esp_err.h"
@@ -38,6 +39,7 @@ static void main_flow(void) {
 
     sd_init();
     gm_init();
+    b_init();
 
     if (wm_connect() != ESP_OK) {
         gm_set_medsenger_synced(false);

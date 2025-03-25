@@ -1,11 +1,4 @@
-
 menu "PILL DISPENSER config"
-    config HTTP_ENDPOINT
-        string "HTTP Endpoint"
-        default "pills.ai.medsenger.ru"
-        help
-            Target endpoint for pill dispenser backend
-
     config SERIAL_NUMBER
         string "Serial number"
         default UNKNOWN
