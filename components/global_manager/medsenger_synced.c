@@ -1,6 +1,6 @@
 #include "medsenger_synced.h"
 #include "freertos/idf_additions.h"
-#include "medsenger_synced_private.h"
+#include "init_global_manager_private.h"
 #include "portmacro.h"
 #include <stdlib.h>
 

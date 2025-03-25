@@ -1,4 +1,7 @@
 #include "init_global_manager.h"
-#include "medsenger_synced_private.h"
+#include "init_global_manager_private.h"
 
-void gm_init(void) { gm_init_medsenger_synced(); }
+void gm_init(void) {
+    gm_init_medsenger_synced();
+    gm_init_stop_all_tasks();
+}
