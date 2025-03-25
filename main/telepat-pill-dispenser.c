@@ -7,16 +7,14 @@
 #include "esp_netif.h"
 #include "freertos/FreeRTOS.h" // IWYU pragma: export
 #include "init_global_manager.h"
+#include "medsenger_http_requests.h"
 #include "medsenger_synced.h"
 #include "nvs_flash.h"
-#include "schedule-request.h"
 #include "schedule_data.h"
 #include "scheduler.h"
 #include <stdint.h>
 
 #define TAG "telepat-pill-dispenser"
-
-#define LED_PIN 2
 
 /* Variable holding number of times ESP32 restarted since first boot.
  * It is placed into RTC memory using RTC_DATA_ATTR and
@@ -43,14 +41,13 @@ static void main_flow(void) {
 
     if (wm_connect() != ESP_OK) {
         gm_set_medsenger_synced(false);
-        ESP_LOGI(TAG, "Failed to connect to wi-fi");
+        ESP_LOGE(TAG, "Failed to connect to wi-fi");
         ESP_ERROR_CHECK(sd_load_schedule_from_flash());
-        sd_print_schedule();
+    } else if (mhr_fetch_schedule(&sd_save_schedule) != ESP_OK) {
+        gm_set_medsenger_synced(false);
+        ESP_LOGE(TAG, "Failed to fetch medsenger schedule");
+        ESP_ERROR_CHECK(sd_load_schedule_from_flash());
     }
-}
-
-static void fetch_schedule_handler(char *buf, unsigned int buf_length) {
-    ESP_ERROR_CHECK(sd_save_schedule(buf, buf_length));
     sd_print_schedule();
 }
 
@@ -62,9 +59,6 @@ void app_main(void) {
 
     init_cells();
     button_init();
-    if (gm_get_medsenger_synced()) {
-        run_fetch_schedule_task(&fetch_schedule_handler);
-    }
     run_scheduler_task();
 
     while (1) {

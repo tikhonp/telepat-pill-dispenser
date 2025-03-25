@@ -1,24 +1,17 @@
-#include "schedule-request.h"
+#include "medsenger_http_requests.h"
+#include "esp_err.h"
 #include "esp_http_client.h"
 #include "esp_log.h"
 #include "esp_tls.h"
-#include "freertos/FreeRTOS.h" // IWYU pragma: export
-#include "freertos/task.h"
-#include "schedule_data.h"
-#include "sdkconfig.h"
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/param.h>
+#include "medsenger_http_requests_private.h"
+#include "pilld_common.h"
 
-#define MAX_HTTP_RECV_BUFFER 512
-#define MAX_HTTP_OUTPUT_BUFFER 2048
+static mhr_schedule_handler mhr_handler;
+static esp_err_t mhr_handler_errored;
 
 static const char *TAG = "GET_SCHEDULE_HTTP_REQUEST";
 
-static void (*timestamps_handler)(char *buf, unsigned int buf_length);
-
-static esp_err_t _http_event_handler(esp_http_client_event_t *evt) {
+static esp_err_t _mhr_http_event_handler(esp_http_client_event_t *evt) {
     static char *output_buffer; // Buffer to store response of http request from
                                 // event handler
     static int output_len;      // Stores number of bytes read
@@ -88,11 +81,14 @@ static esp_err_t _http_event_handler(esp_http_client_event_t *evt) {
     case HTTP_EVENT_ON_FINISH:
         ESP_LOGD(TAG, "HTTP_EVENT_ON_FINISH");
         if (output_buffer != NULL) {
-            timestamps_handler(output_buffer, output_len);
+            esp_err_t err = mhr_handler(output_buffer, output_len);
             free(output_buffer);
             output_buffer = NULL;
+            mhr_handler_errored = err;
+            return err;
         }
         output_len = 0;
+        return ESP_OK;
         break;
     case HTTP_EVENT_DISCONNECTED:
         ESP_LOGI(TAG, "HTTP_EVENT_DISCONNECTED");
@@ -117,40 +113,39 @@ static esp_err_t _http_event_handler(esp_http_client_event_t *evt) {
     return ESP_OK;
 }
 
-static void fetch_schedule(void) {
-    char query[50];
-    sprintf(query, "cells_count=%d", CONFIG_CELLS_COUNT);
+esp_err_t mhr_fetch_schedule_do_request(mhr_schedule_handler h) {
+    mhr_handler = h;
     esp_http_client_config_t config = {
         .host = CONFIG_HTTP_ENDPOINT,
-        .path = "/schedule/v2",
-        .query = query,
+        .path = CONFIG_FETCH_SCHEDULE_QUERY_PATH,
+        .query = "cells_count=" str(CONFIG_CELLS_COUNT),
         .transport_type = HTTP_TRANSPORT_OVER_SSL,
-        .event_handler = _http_event_handler,
+        .event_handler = _mhr_http_event_handler,
         .cert_pem = howsmyssl_com_root_cert_pem_start,
     };
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err = esp_http_client_perform(client);
-
-    if (err == ESP_OK) {
-        ESP_LOGI(TAG, "HTTPS Status = %d, content_length = %" PRId64,
-                 esp_http_client_get_status_code(client),
-                 esp_http_client_get_content_length(client));
-    } else {
-        ESP_LOGE(TAG, "Error perform http request %s", esp_err_to_name(err));
-    }
     esp_http_client_cleanup(client);
+    return err;
 }
 
-static void fetch_schedule_task(void *pvParameters) {
-    fetch_schedule();
-    ESP_LOGI(TAG, "Finished");
-#if !CONFIG_IDF_TARGET_LINUX
-    vTaskDelete(NULL);
-#endif
-}
-
-void run_fetch_schedule_task(void (*handler)(char *buf,
-                                             unsigned int buf_length)) {
-    timestamps_handler = handler;
-    xTaskCreate(&fetch_schedule_task, "http_test_task", 16192, NULL, 5, NULL);
+esp_err_t mhr_fetch_schedule(mhr_schedule_handler h) {
+    esp_err_t err;
+    int mhr_retries = CONFIG_REQUEST_RETRY_COUNT + 1;
+    for (; mhr_retries > 0; --mhr_retries) {
+        mhr_handler_errored = ESP_OK;
+        err = mhr_fetch_schedule_do_request(h);
+        if (err == ESP_OK) {
+            if (mhr_handler_errored == ESP_OK)
+                return ESP_OK;
+            else {
+                err = mhr_handler_errored;
+            }
+        }
+        ESP_LOGE(TAG, "Error perform http request %s. Retrying %d / %d",
+                 esp_err_to_name(err),
+                 CONFIG_REQUEST_RETRY_COUNT + 1 - mhr_retries,
+                 CONFIG_REQUEST_RETRY_COUNT);
+    }
+    return err;
 }

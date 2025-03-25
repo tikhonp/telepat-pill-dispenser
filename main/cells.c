@@ -146,7 +146,7 @@ void tone(uint32_t freq, int duration_sec) {
 }
 
 void init_cells() {
-    for (int i = 0; i < CONFIG_CELLS_COUNT; i++) {
+    for (int i = 0; i < 4; i++) {
         gpio_reset_pin(ZERO_CELL_PIN + i);
         gpio_set_direction(ZERO_CELL_PIN + i, GPIO_MODE_OUTPUT);
     }
@@ -154,7 +154,7 @@ void init_cells() {
 }
 
 void enable_cell(int indx) {
-    if (indx >= CONFIG_CELLS_COUNT) {
+    if (indx >= 4) {
         ESP_LOGE(TAG, "Invalid cell indx");
         abort();
     }
@@ -163,7 +163,7 @@ void enable_cell(int indx) {
 }
 
 void disable_cell(int indx) {
-    if (indx >= CONFIG_CELLS_COUNT) {
+    if (indx >= 4) {
         ESP_LOGE(TAG, "Invalid cell indx");
         abort();
     }

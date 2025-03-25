@@ -6,12 +6,6 @@ menu "PILL DISPENSER config"
         help
             Target endpoint for pill dispenser backend
 
-    config CELLS_COUNT
-        int "Cells count"
-        default 4
-        help
-            Count of meds cells in current device
-
     config SERIAL_NUMBER
         string "Serial number"
         default UNKNOWN

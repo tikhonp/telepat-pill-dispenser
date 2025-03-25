@@ -1,7 +1,7 @@
 #include "esp_err.h"
 #include "esp_http_client.h"
 #include "esp_log.h"
-#include "schedule-request.h"
+#include "medsenger_http_requests_private.h"
 #include "sdkconfig.h"
 #include <stdint.h>
 

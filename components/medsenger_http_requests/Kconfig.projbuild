@@ -1,0 +1,19 @@
+menu "Medsenger HTTP requests"
+    config HTTP_ENDPOINT
+        string "HTTP Endpoint"
+        default "pills.ai.medsenger.ru"
+        help
+            Target endpoint for pill dispenser backend
+
+    config FETCH_SCHEDULE_QUERY_PATH
+        string "Fetch schedule query"
+        default "/schedule/v2"
+        help
+            Query path for fetch schedule endpoint
+    
+    config REQUEST_RETRY_COUNT
+        int "Request retry count"
+        default 2
+        help
+            Number of HTTP-request retries
+endmenu

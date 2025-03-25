@@ -1,7 +1,5 @@
 #pragma once
 
-#include <stdint.h>
-
 /* Root cert for howsmyssl.com, taken from howsmyssl_com_root_cert.pem
 
    The PEM file was extracted from the output of this command:
@@ -17,5 +15,5 @@ extern const char howsmyssl_com_root_cert_pem_start[] asm(
 extern const char howsmyssl_com_root_cert_pem_end[] asm(
     "_binary_howsmyssl_com_root_cert_pem_end");
 
-void run_fetch_schedule_task(void (*handler)(char *buf,
-                                             unsigned int buf_length));
+#define MAX_HTTP_RECV_BUFFER 512
+#define MAX_HTTP_OUTPUT_BUFFER 2048
