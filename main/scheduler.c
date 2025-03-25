@@ -1,9 +1,8 @@
 #include "cells.h"
 #include "esp_log.h"
-#include "esp_netif_sntp.h"
 #include "freertos/FreeRTOS.h" // IWYU pragma: export
 #include "freertos/task.h"
-#include "schedule-storage.h"
+#include "schedule_data.h"
 #include "sdkconfig.h"
 #include <stdint.h>
 #include <sys/time.h>
@@ -18,12 +17,15 @@ void retrieve_time() {
     gettimeofday(&tv, NULL);
 
 #if !CONFIG_IDF_TARGET_LINUX
-    for (int i = 0; i < CONFIG_CELLS_COUNT; i++)
-        if ((schedule_get(i) - (uint32_t)tv.tv_sec) < 15) {
+    for (int i = 0; i < CONFIG_CELLS_COUNT; i++) {
+        sd_cell_schedule_t cell = sd_get_schedule_by_cell_indx(i);
+        if ((cell.start_timestamp <= (uint32_t)tv.tv_sec) &&
+            cell.end_timestamp >= (uint32_t)tv.tv_sec) {
             enable_cell(i);
         } else {
             disable_cell(i);
         }
+    }
 #endif
 
     /*time_t now;*/

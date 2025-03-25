@@ -89,7 +89,7 @@ static esp_err_t _http_event_handler(esp_http_client_event_t *evt) {
         ESP_LOGD(TAG, "HTTP_EVENT_ON_FINISH");
         if (output_buffer != NULL) {
             timestamps_handler(output_buffer, output_len);
-            /*free(output_buffer);*/
+            free(output_buffer);
             output_buffer = NULL;
         }
         output_len = 0;
@@ -104,7 +104,7 @@ static esp_err_t _http_event_handler(esp_http_client_event_t *evt) {
             ESP_LOGI(TAG, "Last mbedtls failure: 0x%x", mbedtls_err);
         }
         if (output_buffer != NULL) {
-            /*free(output_buffer);*/
+            free(output_buffer);
             output_buffer = NULL;
         }
         output_len = 0;

@@ -1,23 +1,18 @@
 #include "button.h"
+#include "cells.h"
+#include "connect.h"
 #include "esp_err.h"
 #include "esp_event.h"
 #include "esp_log.h"
-#include "freertos/FreeRTOS.h" // IWYU pragma: export
-#include "hal/gpio_types.h"
-#include "nvs_flash.h"
-#include "schedule-request.h"
-#include "schedule-storage.h"
-#include "scheduler.h"
-#include "sdkconfig.h"
-#include <stdint.h>
-#if !CONFIG_IDF_TARGET_LINUX
-#include "cells.h"
-#include "connect.h"
 #include "esp_netif.h"
-#endif
+#include "freertos/FreeRTOS.h" // IWYU pragma: export
 #include "init_global_manager.h"
 #include "medsenger_synced.h"
+#include "nvs_flash.h"
+#include "schedule-request.h"
 #include "schedule_data.h"
+#include "scheduler.h"
+#include <stdint.h>
 
 #define TAG "telepat-pill-dispenser"
 
@@ -49,7 +44,6 @@ static void main_flow(void) {
     if (wm_connect() != ESP_OK) {
         gm_set_medsenger_synced(false);
         ESP_LOGI(TAG, "Failed to connect to wi-fi");
-
         ESP_ERROR_CHECK(sd_load_schedule_from_flash());
         sd_print_schedule();
     }
@@ -57,9 +51,6 @@ static void main_flow(void) {
 
 static void fetch_schedule_handler(char *buf, unsigned int buf_length) {
     ESP_ERROR_CHECK(sd_save_schedule(buf, buf_length));
-    sd_print_schedule();
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
-    ESP_ERROR_CHECK(sd_load_schedule_from_flash());
     sd_print_schedule();
 }
 
@@ -69,15 +60,12 @@ void app_main(void) {
 
     main_flow();
 
-    /*init_schedule();*/
-    /*init_cells();*/
-    /*button_init();*/
-    /**/
+    init_cells();
+    button_init();
     if (gm_get_medsenger_synced()) {
         run_fetch_schedule_task(&fetch_schedule_handler);
     }
-    /*run_scheduler_task();*/
-    /**/
+    run_scheduler_task();
 
     while (1) {
         vTaskDelay(1000 / portTICK_PERIOD_MS);

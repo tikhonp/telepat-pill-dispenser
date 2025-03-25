@@ -11,7 +11,7 @@ if(${target} STREQUAL "linux")
 endif()
 
 set(srcs "telepat-pill-dispenser.c" "schedule-request.c"
-            "schedule-storage.c" "scheduler.c" "button.c" "submit-request.c")
+            "scheduler.c" "button.c" "submit-request.c")
 if(NOT ${target} STREQUAL "linux")
     list(APPEND srcs "cells.c")
 endif()

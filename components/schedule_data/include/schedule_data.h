@@ -1,8 +1,8 @@
 #pragma once
 
+#include "esp_err.h"
 #include <stddef.h>
 #include <stdint.h>
-#include "esp_err.h"
 
 #pragma pack(push, 1)
 /*
@@ -49,4 +49,4 @@ esp_err_t sd_load_schedule_from_flash(void);
 Get cell schedule for for specific cell indx
 Must be called after sd_save_schedule() or sd_load_schedule_from_flash()
 */
-sd_cell_schedule_t get_schedule_by_cell_indx(int n);
+sd_cell_schedule_t sd_get_schedule_by_cell_indx(int n);
