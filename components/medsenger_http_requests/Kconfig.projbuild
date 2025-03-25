@@ -10,6 +10,12 @@ menu "Medsenger HTTP requests"
         default "/schedule/v2"
         help
             Query path for fetch schedule endpoint
+
+    config SUBMIT_SUCCESS_QUERY_PATH
+        string "Submit success query"
+        default "/submit"
+        help
+            Submit success pill for specific cell query path
     
     config REQUEST_RETRY_COUNT
         int "Request retry count"

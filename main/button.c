@@ -1,6 +1,8 @@
+#include "esp_err.h"
 #include "esp_log.h"
+#include "freertos/idf_additions.h"
 #include "iot_button.h"
-#include "submit-request.h"
+#include "medsenger_http_requests.h"
 #include <stdint.h>
 #include <sys/time.h>
 
@@ -8,13 +10,16 @@ static const char *TAG = "BUTTON";
 
 #define BUTTON_PIN 6
 
-static void button_single_click_cb(void *arg, void *usr_data) {
-    ESP_LOGI(TAG, "BUTTON_SINGLE_CLICK");
-
+static void _submit(void *params) {
     struct timeval tv;
     gettimeofday(&tv, NULL);
+    ESP_ERROR_CHECK(mhr_submit_succes_cell((uint32_t)tv.tv_sec, 1));
+    vTaskDelete(NULL);
+}
 
-    run_submit_pills_task((uint32_t)tv.tv_sec, 2);
+static void button_single_click_cb(void *arg, void *usr_data) {
+    ESP_LOGI(TAG, "BUTTON_SINGLE_CLICK");
+    xTaskCreate(&_submit, "submit-pills-task", 8192, NULL, 5, NULL);
 }
 
 void button_init() {

@@ -1,8 +1,8 @@
-#include "medsenger_http_requests.h"
 #include "esp_err.h"
 #include "esp_http_client.h"
 #include "esp_log.h"
 #include "esp_tls.h"
+#include "medsenger_http_requests.h"
 #include "medsenger_http_requests_private.h"
 #include "pilld_common.h"
 
@@ -113,7 +113,7 @@ static esp_err_t _mhr_http_event_handler(esp_http_client_event_t *evt) {
     return ESP_OK;
 }
 
-esp_err_t mhr_fetch_schedule_do_request(mhr_schedule_handler h) {
+static esp_err_t mhr_fetch_schedule_do_request(mhr_schedule_handler h) {
     mhr_handler = h;
     esp_http_client_config_t config = {
         .host = CONFIG_HTTP_ENDPOINT,

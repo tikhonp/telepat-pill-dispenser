@@ -17,3 +17,4 @@ extern const char howsmyssl_com_root_cert_pem_end[] asm(
 
 #define MAX_HTTP_RECV_BUFFER 512
 #define MAX_HTTP_OUTPUT_BUFFER 2048
+#define REQUEST_BODY_BUFFER_SIZE 50
