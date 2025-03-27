@@ -1,5 +1,7 @@
 #include "display_error.h"
+#include "button_controller.h"
 #include "buzzer.h"
+#include "esp_system.h"
 #include "led_controller.h"
 #include "stop_all_tasks.h"
 
@@ -10,7 +12,7 @@ void de_display_error(de_fatal_error_t error) {
 
     b_play_notification(FATAL_ERROR);
 
-    // wait for button press
+    bc_wait_for_single_press();
 
-    // reset
+    esp_restart();
 }

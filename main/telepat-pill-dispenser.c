@@ -1,7 +1,8 @@
-#include "button.h"
+#include "button_controller.h"
 #include "buzzer.h"
 #include "cells.h"
 #include "connect.h"
+#include "display_error.h"
 #include "esp_err.h"
 #include "esp_event.h"
 #include "esp_log.h"
@@ -14,7 +15,7 @@
 #include "schedule_data.h"
 #include "scheduler.h"
 #include <stdint.h>
-#include "display_error.h"
+#include <sys/time.h>
 
 #define TAG "telepat-pill-dispenser"
 
@@ -28,34 +29,48 @@ static void main_flow(void) {
     ESP_LOGI(TAG, "Starting pill-dispenser...");
 
     // Initialize NVS, network and freertos
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
-        ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES ||
+        err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
-        ret = nvs_flash_init();
+        err = nvs_flash_init();
     }
-    ESP_ERROR_CHECK(ret);
+    ESP_ERROR_CHECK(err);
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     sd_init();
     gm_init();
     b_init();
+    bc_init();
 
-    de_display_error(FATAL_ERROR);
-
-    /*
     if (wm_connect() != ESP_OK) {
         gm_set_medsenger_synced(false);
         ESP_LOGE(TAG, "Failed to connect to wi-fi");
-        ESP_ERROR_CHECK(sd_load_schedule_from_flash());
+        err = sd_load_schedule_from_flash();
+        if (err != ESP_OK) {
+            de_display_error(FLASH_LOAD_FAILED);
+        }
     } else if (mhr_fetch_schedule(&sd_save_schedule) != ESP_OK) {
         gm_set_medsenger_synced(false);
         ESP_LOGE(TAG, "Failed to fetch medsenger schedule");
-        ESP_ERROR_CHECK(sd_load_schedule_from_flash());
+        err = sd_load_schedule_from_flash();
+        if (err != ESP_OK) {
+            de_display_error(FLASH_LOAD_FAILED);
+        }
     }
     sd_print_schedule();
-    */
+}
+
+static void button_task(void *params) {
+    while (true) {
+        bc_wait_for_single_press();
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+        ESP_ERROR_CHECK(mhr_submit_succes_cell((uint32_t)tv.tv_sec, 1));
+        ESP_LOGI(TAG, "SENT SUBMIT");
+    }
+    vTaskDelete(NULL);
 }
 
 void app_main(void) {
@@ -65,7 +80,9 @@ void app_main(void) {
     main_flow();
 
     init_cells();
-    button_init();
+
+    xTaskCreate(&button_task, "submit-pills-task", 8192, NULL, 1, NULL);
+
     run_scheduler_task();
 
     while (1) {
