@@ -43,6 +43,7 @@ static void main_flow(void) {
     gm_init();
     b_init();
     bc_init();
+    de_init();
 
     if (wm_connect() != ESP_OK) {
         gm_set_medsenger_synced(false);

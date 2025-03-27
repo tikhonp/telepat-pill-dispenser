@@ -1,6 +1,7 @@
 #pragma once
 
 #include "esp_err.h"
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -50,3 +51,8 @@ Get cell schedule for for specific cell indx
 Must be called after sd_save_schedule() or sd_load_schedule_from_flash()
 */
 sd_cell_schedule_t sd_get_schedule_by_cell_indx(int n);
+
+/*
+Fetch value from metadata. If false system must fatal error if internet connection failed.
+*/
+bool sd_get_processing_without_connection_allowed(sd_cell_schedule_t *cell);

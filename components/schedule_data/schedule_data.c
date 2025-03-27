@@ -110,3 +110,7 @@ esp_err_t sd_load_schedule_from_flash(void) {
         }
     }
 }
+
+bool sd_get_processing_without_connection_allowed(sd_cell_schedule_t *cell) {
+    return cell->meta & (1 << 1);
+}
