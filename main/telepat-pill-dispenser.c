@@ -14,6 +14,7 @@
 #include "schedule_data.h"
 #include "scheduler.h"
 #include <stdint.h>
+#include "display_error.h"
 
 #define TAG "telepat-pill-dispenser"
 
@@ -41,6 +42,9 @@ static void main_flow(void) {
     gm_init();
     b_init();
 
+    de_display_error(FATAL_ERROR);
+
+    /*
     if (wm_connect() != ESP_OK) {
         gm_set_medsenger_synced(false);
         ESP_LOGE(TAG, "Failed to connect to wi-fi");
@@ -51,6 +55,7 @@ static void main_flow(void) {
         ESP_ERROR_CHECK(sd_load_schedule_from_flash());
     }
     sd_print_schedule();
+    */
 }
 
 void app_main(void) {
