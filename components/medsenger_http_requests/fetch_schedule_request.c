@@ -5,6 +5,8 @@
 #include "medsenger_http_requests.h"
 #include "medsenger_http_requests_private.h"
 #include "pilld_common.h"
+#include "medsenger_refresh_rate.h"
+#include <stdint.h>
 
 static mhr_schedule_handler mhr_handler;
 static esp_err_t mhr_handler_errored;
@@ -81,7 +83,9 @@ static esp_err_t _mhr_http_event_handler(esp_http_client_event_t *evt) {
     case HTTP_EVENT_ON_FINISH:
         ESP_LOGD(TAG, "HTTP_EVENT_ON_FINISH");
         if (output_buffer != NULL) {
-            esp_err_t err = mhr_handler(output_buffer, output_len);
+            esp_err_t err =
+                mhr_handler(output_buffer, output_len - sizeof(uint32_t));
+            ESP_ERROR_CHECK(m_save_medsenger_refresh_rate_sec(decode_fixed32_little_end(output_buffer+output_len-sizeof(uint32_t))));
             free(output_buffer);
             output_buffer = NULL;
             mhr_handler_errored = err;

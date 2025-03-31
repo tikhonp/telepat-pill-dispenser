@@ -57,6 +57,12 @@ esp_err_t cdc_monitor(void) {
     for (i = 0; i < CONFIG_SD_CELLS_COUNT; ++i)
         schedule[i] = sd_get_schedule_by_cell_indx(i);
 
+    uint32_t medsenger_refresh_rate;
+    ESP_ERROR_CHECK(m_get_medsenger_refresh_rate_sec(&medsenger_refresh_rate));
+
+    ESP_LOGI(TAG, "Got medsenger refresh rate: %" PRIu32,
+             medsenger_refresh_rate);
+
     while (1) {
         struct timeval tv;
         gettimeofday(&tv, NULL);
@@ -104,8 +110,7 @@ esp_err_t cdc_monitor(void) {
             return ESP_OK;
         }
 
-        if (gm_get_medsenger_refresh_rate_sec() <
-            (esp_timer_get_time() / 1000000)) {
+        if (medsenger_refresh_rate < (esp_timer_get_time() / 1000000)) {
             ESP_LOGI(TAG, "Refresh rate limit reached. Restarting...");
             // restart process to fetch data
             esp_restart();
