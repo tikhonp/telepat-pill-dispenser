@@ -15,6 +15,7 @@
 #include "nvs_flash.h"
 #include "schedule_data.h"
 #include "send_event_data.h"
+#include "sleep_controller.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/time.h>
@@ -103,6 +104,9 @@ static void main_flow(void) {
             vTaskDelay(1000 / portTICK_PERIOD_MS);
     else
         ESP_LOGI(TAG, "PREPARE SLEEP");
+
+    ESP_ERROR_CHECK(wm_disconnect());
+    de_sleep();
 }
 
 void app_main(void) {
