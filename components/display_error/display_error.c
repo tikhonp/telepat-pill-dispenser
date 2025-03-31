@@ -21,6 +21,8 @@ static void de_run_display_error(void *params) {
         }
     }
 
+    ESP_LOGE(TAG, "Fired");
+
     gm_fire_stop_all_tasks();
 
     de_start_blinking();

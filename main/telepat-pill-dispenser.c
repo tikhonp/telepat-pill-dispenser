@@ -1,6 +1,7 @@
 #include "button_controller.h"
 #include "buzzer.h"
-#include "cells.h"
+#include "cell_activity_watchdog.h"
+#include "cell_led_controller.h"
 #include "connect.h"
 #include "display_error.h"
 #include "esp_err.h"
@@ -13,7 +14,6 @@
 #include "medsenger_synced.h"
 #include "nvs_flash.h"
 #include "schedule_data.h"
-#include "scheduler.h"
 #include <stdint.h>
 #include <sys/time.h>
 
@@ -44,6 +44,7 @@ static void main_flow(void) {
     b_init();
     bc_init();
     de_init();
+    cdc_init_led_signals();
 
     if (wm_connect() != ESP_OK) {
         gm_set_medsenger_synced(false);
@@ -61,17 +62,15 @@ static void main_flow(void) {
         }
     }
     sd_print_schedule();
-}
 
-static void button_task(void *params) {
-    while (true) {
-        bc_wait_for_single_press();
-        struct timeval tv;
-        gettimeofday(&tv, NULL);
-        ESP_ERROR_CHECK(mhr_submit_succes_cell((uint32_t)tv.tv_sec, 1));
-        ESP_LOGI(TAG, "SENT SUBMIT");
-    }
-    vTaskDelete(NULL);
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
+
+    err = cdc_monitor();
+    if (err != ESP_OK)
+        while (1)
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
+    else
+        ESP_LOGI(TAG, "PREPARE SLEEP");
 }
 
 void app_main(void) {
@@ -79,14 +78,4 @@ void app_main(void) {
     ESP_LOGI(TAG, "Boot count: %d", boot_count);
 
     main_flow();
-
-    init_cells();
-
-    xTaskCreate(&button_task, "submit-pills-task", 8192, NULL, 1, NULL);
-
-    run_scheduler_task();
-
-    while (1) {
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
 }
