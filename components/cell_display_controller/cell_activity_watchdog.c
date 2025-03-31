@@ -15,6 +15,7 @@
 #include "portmacro.h"
 #include "schedule_data.h"
 #include "sdkconfig.h"
+#include "send_event_data.h"
 #include <stdint.h>
 #include <sys/time.h>
 
@@ -120,6 +121,11 @@ esp_err_t cdc_monitor(void) {
                     err = mhr_submit_succes_cell((uint32_t)tv.tv_sec, i);
                     if (err != ESP_OK) {
                         ESP_LOGI(TAG, "Failed to send to Medsenger");
+                        se_send_event_t e = {
+                            .timestamp = (uint32_t)tv.tv_sec,
+                            .cell_indx = i,
+                        };
+                        ESP_ERROR_CHECK(se_add_fsent_event(e));
                     }
                 }
 

@@ -19,20 +19,15 @@ static SemaphoreHandle_t sd_schedule_data_mutex;
 
 void sd_init(void) {
     sd_schedule_data_mutex = xSemaphoreCreateMutex();
-    if (sd_schedule_data_mutex == NULL) {
-        abort();
-    }
+    assert(sd_schedule_data_mutex != NULL);
 }
 
 sd_cell_schedule_t sd_get_schedule_by_cell_indx(int n) {
     assert(n < CONFIG_SD_CELLS_COUNT);
     sd_cell_schedule_t buf;
-    if (xSemaphoreTake(sd_schedule_data_mutex, portMAX_DELAY) == pdTRUE) {
-        buf = sd_schedule_data[n];
-        xSemaphoreGive(sd_schedule_data_mutex);
-    } else {
-        abort();
-    }
+    assert(xSemaphoreTake(sd_schedule_data_mutex, portMAX_DELAY) == pdTRUE);
+    buf = sd_schedule_data[n];
+    xSemaphoreGive(sd_schedule_data_mutex);
     return buf;
 }
 

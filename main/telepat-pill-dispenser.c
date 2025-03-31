@@ -14,6 +14,8 @@
 #include "medsenger_synced.h"
 #include "nvs_flash.h"
 #include "schedule_data.h"
+#include "send_event_data.h"
+#include <stddef.h>
 #include <stdint.h>
 #include <sys/time.h>
 
@@ -24,6 +26,34 @@
  * maintains its value when ESP32 wakes from deep sleep.
  */
 RTC_DATA_ATTR static int boot_count = 0;
+
+#define EVENTS_COUNT_BUFFER 64
+
+static void send_saved_on_flash_events() {
+    esp_err_t err;
+    se_send_event_t events[EVENTS_COUNT_BUFFER],
+        new_events[EVENTS_COUNT_BUFFER];
+    size_t elements_count, new_elements_count = 0;
+
+    err = se_get_fsent_events(events, EVENTS_COUNT_BUFFER, &elements_count);
+    ESP_ERROR_CHECK(err);
+
+    ESP_LOGI(TAG, "Send save on flash elements: %d", elements_count);
+
+    if (elements_count == 0)
+        return;
+
+    for (int i = 0; i < elements_count; ++i) {
+        err = mhr_submit_succes_cell(events[i].timestamp, events[i].cell_indx);
+        if (err != ESP_OK) {
+            ESP_LOGI(TAG, "Failed to send saved data to Medsenger");
+            new_events[new_elements_count++] = events[i];
+        }
+    }
+
+    err = se_save_fsent_events(new_events, new_elements_count);
+    ESP_ERROR_CHECK(err);
+}
 
 static void main_flow(void) {
     ESP_LOGI(TAG, "Starting pill-dispenser...");
@@ -61,6 +91,8 @@ static void main_flow(void) {
             de_display_error(FLASH_LOAD_FAILED);
         }
     }
+    if (gm_get_medsenger_synced())
+        send_saved_on_flash_events();
     sd_print_schedule();
 
     vTaskDelay(2000 / portTICK_PERIOD_MS);
