@@ -1,6 +1,7 @@
 #include "buzzer_player_private.h"
 #include "driver/ledc.h"
 #include "freertos/FreeRTOS.h"
+#include "pilld_common.h"
 #include <stddef.h>
 
 #define LEDC_OUTPUT_IO 5
@@ -23,6 +24,10 @@ void b_buzzer_channel_init(void) {
 }
 
 static void play_note(uint32_t note, unsigned int duration_millis) {
+    if (note == NOTE_EMPTY) {
+        vTaskDelay(duration_millis / portTICK_PERIOD_MS);
+        return;
+    }
     ledc_timer_config_t ledc_timer = {.speed_mode = LEDC_MODE,
                                       .timer_num = LEDC_TIMER,
                                       .duty_resolution = LEDC_DUTY_RES,
@@ -43,10 +48,10 @@ static void play_melody(const b_sample_t melody[], size_t melody_length) {
 void b_play_notification_task(enum b_notification_t notification) {
     switch (notification) {
     case FATAL_ERROR:
-        play_melody(_b_fatal_err, 1);
+        play_melody(_b_fatal_err, ARR_LENGTH(_b_fatal_err));
         break;
     case PILL_NOTIFICATION:
-        play_melody(_b_pill_not, 1);
+        play_melody(_b_pill_not, ARR_LENGTH(_b_pill_not));
         break;
     }
 }

@@ -13,7 +13,7 @@ const static uint16_t b_notes[] = {
     3729, 3951, 4186, 4435, 4699, 4978};
 
 typedef enum {
-    NO_NOTE = 0,
+    NOTE_EMPTY = 0,
     NOTE_A0,
     NOTE_AS0,
     NOTE_B0,
@@ -109,12 +109,95 @@ typedef struct {
     unsigned int duration_millis;
 } b_sample_t;
 
+#define DUR_FOURTH (600u) // millis
+#define DUR_EIGHTH DUR_FOURTH / 2
+#define DUR_SIXTEENTH DUR_EIGHTH / 2
+#define DUR_THREE_SIXTEENTH DUR_SIXTEENTH * 3
+#define DUR_THREE_EIGHTH DUR_EIGHTH * 3
+
 static const b_sample_t _b_fatal_err[] = {
     {.note = NOTE_D1, .duration_millis = 1000},
 };
 
 static const b_sample_t _b_pill_not[] = {
-    {.note = NOTE_D1, .duration_millis = 300},
+    {.note = NOTE_GS4, .duration_millis = DUR_EIGHTH},
+
+    {.note = NOTE_CS5, .duration_millis = DUR_EIGHTH},
+    {.note = NOTE_CS5, .duration_millis = DUR_EIGHTH},
+    {.note = NOTE_F5, .duration_millis = DUR_EIGHTH},
+    {.note = NOTE_F5, .duration_millis = DUR_EIGHTH},
+
+    {.note = NOTE_CS5, .duration_millis = DUR_FOURTH},
+    {.note = NOTE_GS4, .duration_millis = DUR_EIGHTH},
+    {.note = NOTE_EMPTY, .duration_millis = DUR_SIXTEENTH},
+    {.note = NOTE_GS4, .duration_millis = DUR_SIXTEENTH},
+
+    {.note = NOTE_GS4, .duration_millis = DUR_THREE_SIXTEENTH},
+    {.note = NOTE_GS4, .duration_millis = DUR_SIXTEENTH},
+    {.note = NOTE_DS5, .duration_millis = DUR_SIXTEENTH},
+    {.note = NOTE_CS5, .duration_millis = DUR_SIXTEENTH},
+    {.note = NOTE_C5, .duration_millis = DUR_SIXTEENTH},
+    {.note = NOTE_AS4, .duration_millis = DUR_SIXTEENTH},
+
+    {.note = NOTE_GS4, .duration_millis = DUR_FOURTH},
+    {.note = NOTE_EMPTY, .duration_millis = DUR_EIGHTH},
+    {.note = NOTE_GS4, .duration_millis = DUR_EIGHTH},
+
+    {.note = NOTE_CS5, .duration_millis = DUR_THREE_SIXTEENTH},
+    {.note = NOTE_CS5, .duration_millis = DUR_SIXTEENTH},
+    {.note = NOTE_F5, .duration_millis = DUR_EIGHTH},
+    {.note = NOTE_F5, .duration_millis = DUR_EIGHTH},
+
+    {.note = NOTE_CS5, .duration_millis = DUR_FOURTH},
+    {.note = NOTE_GS4, .duration_millis = DUR_EIGHTH},
+    {.note = NOTE_CS5, .duration_millis = DUR_EIGHTH},
+
+    {.note = NOTE_C5, .duration_millis = DUR_EIGHTH},
+    {.note = NOTE_AS4, .duration_millis = DUR_SIXTEENTH},
+    {.note = NOTE_C5, .duration_millis = DUR_SIXTEENTH},
+    {.note = NOTE_CS5, .duration_millis = DUR_EIGHTH},
+    {.note = NOTE_G4, .duration_millis = DUR_EIGHTH},
+
+    {.note = NOTE_GS4, .duration_millis = DUR_FOURTH},
+    {.note = NOTE_EMPTY, .duration_millis = DUR_EIGHTH},
+    {.note = NOTE_GS4, .duration_millis = DUR_EIGHTH},
+
+    {.note = NOTE_C5, .duration_millis = DUR_EIGHTH},
+    {.note = NOTE_C5, .duration_millis = DUR_EIGHTH},
+    {.note = NOTE_CS5, .duration_millis = DUR_SIXTEENTH},
+    {.note = NOTE_C5, .duration_millis = DUR_SIXTEENTH},
+    {.note = NOTE_AS4, .duration_millis = DUR_SIXTEENTH},
+    {.note = NOTE_C5, .duration_millis = DUR_SIXTEENTH},
+
+    {.note = NOTE_CS5, .duration_millis = DUR_FOURTH},
+    {.note = NOTE_GS4, .duration_millis = DUR_EIGHTH},
+    {.note = NOTE_CS5, .duration_millis = DUR_EIGHTH},
+
+    {.note = NOTE_C5, .duration_millis = DUR_EIGHTH},
+    {.note = NOTE_C5, .duration_millis = DUR_EIGHTH},
+    {.note = NOTE_C5, .duration_millis = DUR_SIXTEENTH},
+    {.note = NOTE_FS5, .duration_millis = DUR_SIXTEENTH},
+    {.note = NOTE_CS5, .duration_millis = DUR_SIXTEENTH},
+    {.note = NOTE_C5, .duration_millis = DUR_SIXTEENTH},
+
+    {.note = NOTE_CS5, .duration_millis = DUR_THREE_EIGHTH},
+    {.note = NOTE_CS5, .duration_millis = DUR_EIGHTH},
+
+    {.note = NOTE_AS4, .duration_millis = DUR_EIGHTH},
+    {.note = NOTE_AS4, .duration_millis = DUR_EIGHTH},
+    {.note = NOTE_AS4, .duration_millis = DUR_EIGHTH},
+    {.note = NOTE_CS5, .duration_millis = DUR_EIGHTH},
+
+    {.note = NOTE_CS5, .duration_millis = DUR_FOURTH},
+    {.note = NOTE_GS4, .duration_millis = DUR_EIGHTH},
+    {.note = NOTE_GS4, .duration_millis = DUR_EIGHTH},
+
+    {.note = NOTE_GS4, .duration_millis = DUR_THREE_SIXTEENTH},
+    {.note = NOTE_GS4, .duration_millis = DUR_SIXTEENTH},
+    {.note = NOTE_DS5, .duration_millis = DUR_EIGHTH},
+    {.note = NOTE_C5, .duration_millis = DUR_EIGHTH},
+
+    {.note = NOTE_CS5, .duration_millis = DUR_THREE_EIGHTH},
 };
 
 void b_play_notification_task(enum b_notification_t notification);

@@ -4,8 +4,8 @@
 #include "esp_tls.h"
 #include "medsenger_http_requests.h"
 #include "medsenger_http_requests_private.h"
-#include "pilld_common.h"
 #include "medsenger_refresh_rate.h"
+#include "pilld_common.h"
 #include <stdint.h>
 
 static mhr_schedule_handler mhr_handler;
@@ -85,7 +85,9 @@ static esp_err_t _mhr_http_event_handler(esp_http_client_event_t *evt) {
         if (output_buffer != NULL) {
             esp_err_t err =
                 mhr_handler(output_buffer, output_len - sizeof(uint32_t));
-            ESP_ERROR_CHECK(m_save_medsenger_refresh_rate_sec(decode_fixed32_little_end(output_buffer+output_len-sizeof(uint32_t))));
+            ESP_ERROR_CHECK(
+                m_save_medsenger_refresh_rate_sec(decode_fixed32_little_end(
+                    output_buffer + output_len - sizeof(uint32_t))));
             free(output_buffer);
             output_buffer = NULL;
             mhr_handler_errored = err;
@@ -122,7 +124,7 @@ static esp_err_t mhr_fetch_schedule_do_request(mhr_schedule_handler h) {
     esp_http_client_config_t config = {
         .host = CONFIG_HTTP_ENDPOINT,
         .path = CONFIG_FETCH_SCHEDULE_QUERY_PATH,
-        .query = "cells_count=" str(CONFIG_CELLS_COUNT),
+        .query = "cells_count=" str(CONFIG_SD_CELLS_COUNT),
         .transport_type = HTTP_TRANSPORT_OVER_SSL,
         .event_handler = _mhr_http_event_handler,
         .cert_pem = howsmyssl_com_root_cert_pem_start,
