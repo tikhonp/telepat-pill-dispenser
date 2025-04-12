@@ -124,7 +124,7 @@ static esp_err_t mhr_fetch_schedule_do_request(mhr_schedule_handler h) {
     esp_http_client_config_t config = {
         .host = CONFIG_HTTP_ENDPOINT,
         .path = CONFIG_FETCH_SCHEDULE_QUERY_PATH,
-        .query = "cells_count=" str(CONFIG_SD_CELLS_COUNT),
+        .query = "serial_number=" CONFIG_SERIAL_NUMBER,
         .transport_type = HTTP_TRANSPORT_OVER_SSL,
         .event_handler = _mhr_http_event_handler,
         .cert_pem = howsmyssl_com_root_cert_pem_start,
