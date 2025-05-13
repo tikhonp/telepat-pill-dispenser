@@ -1,0 +1,2 @@
+dependencies:
+  eil/i2cdev: ^1.5.1

@@ -106,6 +106,7 @@ static void main_flow(void) {
         ESP_LOGI(TAG, "PREPARE SLEEP");
 
     ESP_ERROR_CHECK(wm_disconnect());
+    cdc_deinit_led_signals();
     de_sleep();
 }
 

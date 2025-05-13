@@ -1,6 +1,13 @@
+#include "sdkconfig.h"
+#ifdef CONFIG_CDC_LEDS_PLAIN_PINS
+static const uint8_t cdc_cell_indx_to_gpio_map[] = {
+    1,
+    2,
+    3,
+    4,
+};
 #include "cell_led_controller.h"
 #include "driver/gpio.h"
-#include "sdkconfig.h"
 
 void cdc_init_led_signals(void) {
     for (int i = 0; i < 4; i++) {
@@ -18,3 +25,8 @@ void cdc_disable_signal(uint8_t indx) {
     assert(indx < CONFIG_SD_CELLS_COUNT);
     gpio_set_level(cdc_cell_indx_to_gpio_map[indx], 0);
 }
+
+void cdc_deinit_led_signals(void) {
+    // nothing
+}
+#endif
