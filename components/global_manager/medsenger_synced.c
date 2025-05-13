@@ -2,6 +2,7 @@
 #include "freertos/idf_additions.h"
 #include "init_global_manager_private.h"
 #include "portmacro.h"
+#include <assert.h>
 #include <stdlib.h>
 
 // medsenger_synced is true by default
@@ -11,9 +12,7 @@ static SemaphoreHandle_t gm_medsenger_synced_mutex;
 
 void gm_init_medsenger_synced(void) {
     gm_medsenger_synced_mutex = xSemaphoreCreateMutex();
-    if (gm_medsenger_synced_mutex == NULL) {
-        abort();
-    }
+    assert(gm_medsenger_synced_mutex != NULL);
 }
 
 bool gm_get_medsenger_synced(void) {

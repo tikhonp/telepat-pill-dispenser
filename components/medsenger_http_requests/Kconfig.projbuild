@@ -7,13 +7,13 @@ menu "Medsenger HTTP requests"
 
     config FETCH_SCHEDULE_QUERY_PATH
         string "Fetch schedule query"
-        default "/schedule/v2"
+        default "/pill-dispenser/schedule"
         help
             Query path for fetch schedule endpoint
 
     config SUBMIT_SUCCESS_QUERY_PATH
         string "Submit success query"
-        default "/submit"
+        default "/pill-dispenser/submit"
         help
             Submit success pill for specific cell query path
     
