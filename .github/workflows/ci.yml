@@ -1,0 +1,12 @@
+name: "Build and Lint"
+
+on: [ push ]
+
+jobs:
+  build_and_static_analysis:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: espressif/install-esp-idf-action@v1
+    - run: |
+        idf.py build
