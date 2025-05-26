@@ -9,22 +9,19 @@
 #include <string.h>
 
 /*
-* So if  matrix is 4x7 where 4-`COM`s and 7 is `a`
+* So if  matrix is 4x7 where 4-`a`s and 7 is `com`
 *
 * It whould look like this
 *
-*      com0 com1 com2 com3
-* row0 -    -    -    -    byte0 [0, 0, 0, 0, unused, unused, unused, unused] system idxs 0-3
-* row1 -    -    -    -    byte1 [0, 0, 0, 0, unused, unused, unused, unused]             4-7
-* row2 -    -    -    -    byte2 [0, 0, 0, 0, unused, unused, unused, unused]             8-11
-* row3 -    -    -    -    byte3 [0, 0, 0, 0, unused, unused, unused, unused]             12-15
-* row4 -    -    -    -    byte4 [0, 0, 0, 0, unused, unused, unused, unused]             16-19
-* row5 -    -    -    -    byte5 [0, 0, 0, 0, unused, unused, unused, unused]             20-23
-* row6 -    -    -    -    byte0 [0, 0, 0, 0, unused, unused, unused, unused]             24-27
+*      com0 com1 com2 com3 com4 com5 com6
+* row0 -    -    -    -    -    -    -    byte0 [0, 0, 0, 0, 0, 0, 0, unused] system idxs 0-6
+* row1 -    -    -    -    -    -    -    byte1 [0, 0, 0, 0, 0, 0, 0, unused]             7-13
+* row2 -    -    -    -    -    -    -    byte2 [0, 0, 0, 0, 0, 0, 0, unused]             14-20
+* row3 -    -    -    -    -    -    -    byte3 [0, 0, 0, 0, 0, 0, 0, unused]             21-27
 *
 * There is byte array `leds_state`
 *
-* And if i want set let's say (2, 4) led (com1, row3) i need to set second bit of byte3
+* And if i want set let's say (2, 4) led (row1, com3) i need to set fourth bit of byte1
 * 
 * So i count system cell indexes from left to right and from top to bottom
 */
@@ -38,23 +35,23 @@ static SemaphoreHandle_t leds_mu;
 
 static void enable_signal_in_leds_state(uint8_t indx) {
     uint8_t byte_indx;
-    if (indx > 4) {
-        byte_indx = (indx / 4) - 1;
+    if (indx > 7) {
+        byte_indx = (indx / 7) - 1;
     } else {
         byte_indx = 0;
     }
-    uint8_t bit_indx = indx % 4;
+    uint8_t bit_indx = indx % 7;
     leds_state[byte_indx] = leds_state[byte_indx] | (1 << bit_indx);
 }
 
 static void disable_signal_in_leds_state(uint8_t indx) {
     uint8_t byte_indx;
-    if (indx > 4) {
-        byte_indx = (indx / 4) - 1;
+    if (indx > 7) {
+        byte_indx = (indx / 7) - 1;
     } else {
         byte_indx = 0;
     }
-    uint8_t bit_indx = indx % 4;
+    uint8_t bit_indx = indx % 7;
     leds_state[byte_indx] = leds_state[byte_indx] & ~(1 << bit_indx);
 }
 
