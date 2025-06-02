@@ -1,4 +1,4 @@
-#include "sdkconfig.h"
+#include "sdkconfig.h" // IWYU pragma: export
 #ifdef CONFIG_CDC_LEDS_PLAIN_PINS
 #include "cell_led_controller.h"
 #include "driver/gpio.h"

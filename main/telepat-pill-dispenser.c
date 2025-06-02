@@ -77,6 +77,15 @@ static void main_flow(void) {
     de_init();
     cdc_init_led_signals();
 
+    while (1) {
+        for (int i = 0; i < CONFIG_SD_CELLS_COUNT; i++) {
+            cdc_enable_signal(i);
+            vTaskDelay(500 / portTICK_PERIOD_MS);
+            cdc_disable_signal(i);
+        }
+    }
+
+    /*
     if (wm_connect() != ESP_OK) {
         gm_set_medsenger_synced(false);
         ESP_LOGE(TAG, "Failed to connect to wi-fi");
@@ -108,6 +117,7 @@ static void main_flow(void) {
     ESP_ERROR_CHECK(wm_disconnect());
     cdc_deinit_led_signals();
     de_sleep();
+    */
 }
 
 void app_main(void) {
