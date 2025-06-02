@@ -2,9 +2,8 @@
 #include "driver/ledc.h"
 #include "freertos/FreeRTOS.h"
 #include "pilld_common.h"
+#include "sdkconfig.h"
 #include <stddef.h>
-
-#define LEDC_OUTPUT_IO 5
 
 #define LEDC_MODE LEDC_LOW_SPEED_MODE
 #define LEDC_CHANNEL LEDC_CHANNEL_0
@@ -17,7 +16,7 @@ void b_buzzer_channel_init(void) {
                                           .channel = LEDC_CHANNEL,
                                           .timer_sel = LEDC_TIMER,
                                           .intr_type = LEDC_INTR_DISABLE,
-                                          .gpio_num = LEDC_OUTPUT_IO,
+                                          .gpio_num = CONFIG_SD_BUZZER_PIN_NUMBER,
                                           .duty = 0, // Set duty to 0%
                                           .hpoint = 0};
     ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel));
