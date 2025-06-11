@@ -1,6 +1,6 @@
 name: "Build and Lint"
 
-on: [ push ]
+on: [ push, workflow_dispatch ]
 
 jobs:
   build_and_static_analysis:
