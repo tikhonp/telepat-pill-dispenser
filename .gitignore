@@ -52,3 +52,6 @@ sdkconfig.old
 sdkconfig
 
 dependencies.lock
+
+CMakeCache.txt
+CMakeFiles
