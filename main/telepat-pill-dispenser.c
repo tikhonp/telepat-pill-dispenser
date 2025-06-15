@@ -80,7 +80,7 @@ static void main_flow(void) {
     while (1) {
         for (int i = 0; i < CONFIG_SD_CELLS_COUNT; i++) {
             cdc_enable_signal(i);
-            vTaskDelay(500 / portTICK_PERIOD_MS);
+            vTaskDelay(2000 / portTICK_PERIOD_MS);
             cdc_disable_signal(i);
         }
     }

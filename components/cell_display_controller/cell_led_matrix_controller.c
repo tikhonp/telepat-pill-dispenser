@@ -1,6 +1,6 @@
 #include "sdkconfig.h"
 #include <assert.h>
-#include <stdint.h>
+#include <strings.h>
 #ifdef CONFIG_CDC_LEDS_MATRIX
 #include "cell_led_controller.h"
 #include <esp_log.h>
@@ -33,25 +33,29 @@ static uint8_t leds_state[HT16K33_RAM_SIZE_BYTES] = {0};
 
 static SemaphoreHandle_t leds_mu;
 
+#define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
+#define BYTE_TO_BINARY(byte)                                                   \
+    ((byte) & 0x80 ? '1' : '0'), ((byte) & 0x40 ? '1' : '0'),                  \
+        ((byte) & 0x20 ? '1' : '0'), ((byte) & 0x10 ? '1' : '0'),              \
+        ((byte) & 0x08 ? '1' : '0'), ((byte) & 0x04 ? '1' : '0'),              \
+        ((byte) & 0x02 ? '1' : '0'), ((byte) & 0x01 ? '1' : '0')
+
+static void print_leds_state() {
+    for (int i = 0; i < HT16K33_RAM_SIZE_BYTES; i++)
+        printf(BYTE_TO_BINARY_PATTERN "\n", BYTE_TO_BINARY(leds_state[i]));
+}
+
 static void enable_signal_in_leds_state(uint8_t indx) {
-    uint8_t byte_indx;
-    if (indx > 4) {
-        byte_indx = (indx / 4) - 1;
-    } else {
-        byte_indx = 0;
-    }
-    uint8_t bit_indx = indx % 4;
+    uint8_t byte_indx = indx / 7;
+    uint8_t bit_indx = indx % 7;
     leds_state[byte_indx] = leds_state[byte_indx] | (1 << bit_indx);
+    printf("Enabling %d\n", indx);
+    print_leds_state();
 }
 
 static void disable_signal_in_leds_state(uint8_t indx) {
-    uint8_t byte_indx;
-    if (indx > 4) {
-        byte_indx = (indx / 4) - 1;
-    } else {
-        byte_indx = 0;
-    }
-    uint8_t bit_indx = indx % 4;
+    uint8_t byte_indx = indx / 7;
+    uint8_t bit_indx = indx % 7;
     leds_state[byte_indx] = leds_state[byte_indx] & ~(1 << bit_indx);
 }
 
