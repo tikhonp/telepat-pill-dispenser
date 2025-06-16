@@ -4,6 +4,7 @@
 #include "esp_netif_types.h"
 #include "esp_wifi_types_generic.h"
 #include "sdkconfig.h"
+#include "wifi_creds.h"
 
 #define WM_NETIF_DESC_STA "telepat_netif_sta"
 #if CONFIG_WM_WIFI_SCAN_METHOD_FAST
@@ -44,4 +45,4 @@ esp_err_t wm_wifi_sta_do_connect(wifi_config_t wifi_config, bool wait);
 esp_err_t wm_wifi_sta_do_disconnect(void);
 bool wm_is_our_netif(const char *prefix, esp_netif_t *netif);
 void wm_wifi_shutdown(void);
-esp_err_t wm_wifi_connect(void);
+esp_err_t wm_wifi_connect(wifi_creds_t creds);

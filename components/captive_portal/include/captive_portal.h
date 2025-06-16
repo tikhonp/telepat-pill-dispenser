@@ -8,7 +8,7 @@
 
 typedef struct {
     char ssid[33];
-    char password[65];
+    char psk[65];
     bool success;
 } wifi_credentials_t;
 

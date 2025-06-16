@@ -113,6 +113,5 @@ static void main_flow(void) {
 void app_main(void) {
     ++boot_count;
     ESP_LOGI(TAG, "Boot count: %d", boot_count);
-
     main_flow();
 }
