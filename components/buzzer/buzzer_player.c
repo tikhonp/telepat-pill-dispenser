@@ -1,6 +1,6 @@
 #include "buzzer_player_private.h"
 #include "driver/ledc.h"
-#include "freertos/FreeRTOS.h"
+#include "freertos/FreeRTOS.h" // IWYU pragma: export
 #include "pilld_common.h"
 #include <stddef.h>
 

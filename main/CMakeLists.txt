@@ -10,4 +10,5 @@ idf_component_register(SRCS "telepat-pill-dispenser.c"
                         display_error
                         button_controller 
                         cell_display_controller
+                        captive_portal
                         INCLUDE_DIRS ".")

@@ -8,17 +8,9 @@ endmenu
 
 menu "Wi-Fi connection configuration"
 
-    config WM_WIFI_SSID
-        string "WiFi SSID"
-        default "myssid"
-        help
-            SSID (network name) for the example to connect to.
-
-    config WM_WIFI_PASSWORD
-        string "WiFi Password"
-        default "mypassword"
-        help
-            WiFi password (WPA or WPA2) for the example to use.
+    config WM_CAPTIVE_PORTAL_NETWORK_NAME
+        string "Captive portal network name"
+        default "pill-dispenser"
 
     config WM_WIFI_CONN_MAX_RETRY
         int "Maximum retry"

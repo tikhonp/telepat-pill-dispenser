@@ -121,7 +121,7 @@ esp_err_t wm_wifi_sta_do_connect(wifi_config_t wifi_config, bool wait) {
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
     esp_err_t ret = esp_wifi_connect();
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "WiFi connect failed! ret:%x", ret);
+        ESP_LOGE(TAG, "WiFi connect failed! Error: %s", esp_err_to_name(ret));
         return ret;
     }
     if (wait) {
@@ -152,19 +152,20 @@ void wm_wifi_shutdown(void) {
     wm_wifi_stop();
 }
 
-esp_err_t wm_wifi_connect(void) {
+esp_err_t wm_wifi_connect(wifi_creds_t creds) {
     ESP_LOGI(TAG, "Start wifi_connect.");
     wm_wifi_start();
     wifi_config_t wifi_config = {
         .sta =
             {
-                .ssid = CONFIG_WM_WIFI_SSID,
-                .password = CONFIG_WM_WIFI_PASSWORD,
                 .scan_method = WM_WIFI_SCAN_METHOD,
                 .sort_method = WM_WIFI_CONNECT_AP_SORT_METHOD,
                 .threshold.rssi = CONFIG_WM_WIFI_SCAN_RSSI_THRESHOLD,
                 .threshold.authmode = WM_WIFI_SCAN_AUTH_MODE_THRESHOLD,
             },
     };
+    strncpy((char *)wifi_config.sta.ssid, creds.ssid, sizeof(wifi_config.sta.ssid));
+    strncpy((char *)wifi_config.sta.password, creds.psk,
+            sizeof(wifi_config.sta.password));
     return wm_wifi_sta_do_connect(wifi_config, true);
 }

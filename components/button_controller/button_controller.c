@@ -33,6 +33,7 @@ void bc_init(void) {
         .gpio_num = BUTTON_PIN,
         .active_level = BUTTON_INACTIVE,
         .enable_power_save = false,
+        .disable_pull = false,
     };
 
     button_handle_t btn;
