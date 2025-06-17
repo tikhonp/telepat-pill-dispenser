@@ -1,5 +1,3 @@
-#include "sdkconfig.h"
-#include <assert.h>
 #include <stdint.h>
 #ifdef CONFIG_CDC_LEDS_MATRIX
 #include "cell_led_controller.h"

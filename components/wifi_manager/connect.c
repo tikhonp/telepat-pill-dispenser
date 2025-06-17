@@ -31,7 +31,7 @@ esp_err_t wm_connect() {
 
 esp_err_t wm_disconnect(void) {
     wm_wifi_shutdown();
-    ESP_ERROR_CHECK(esp_unregister_shutdown_handler(&wm_wifi_shutdown));
+    // ESP_ERROR_CHECK(esp_unregister_shutdown_handler(&wm_wifi_shutdown));
     esp_netif_sntp_deinit();
     return ESP_OK;
 }

@@ -16,6 +16,7 @@
 #include "schedule_data.h"
 #include "send_event_data.h"
 #include "sleep_controller.h"
+#include "wifi_creds.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/time.h>
@@ -76,6 +77,8 @@ static void main_flow(void) {
     bc_init();
     de_init();
     cdc_init_led_signals();
+
+    // gm_set_wifi_creds(NULL);
 
     if (wm_connect() != ESP_OK) {
         gm_set_medsenger_synced(false);

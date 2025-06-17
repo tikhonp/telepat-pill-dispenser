@@ -1,4 +1,5 @@
 #include "captive_portal.h"
+#include "esp_err.h"
 #include "esp_event.h"
 #include "esp_http_server.h"
 #include "esp_log.h"
@@ -10,7 +11,6 @@
 #include "freertos/task.h"
 #include "lwip/ip4_addr.h"
 #include "lwip/sockets.h"
-#include "nvs_flash.h"
 #include <string.h>
 
 static const char *TAG = "WIFI-CONFIGURATOR";
@@ -124,15 +124,24 @@ static const char *captive_html =
 // --- Обработчик GET /
 static esp_err_t portal_root_get_handler(httpd_req_t *req) {
     ESP_LOGI(TAG, "GET request for '/' - returning captive page.");
-    httpd_resp_set_type(req, "text/html");
+    esp_err_t err = httpd_resp_set_type(req, "text/html");
+    if (err != ESP_OK)
+        return err;
     return httpd_resp_send(req, captive_html, HTTPD_RESP_USE_STRLEN);
 }
 
 // --- Обработчик системных запросов для проверки живости сети ---
 static esp_err_t portal_redirect_handler(httpd_req_t *req) {
-    httpd_resp_set_status(req, "302 Found");
-    httpd_resp_set_hdr(req, "Location", "/");
-    httpd_resp_send(req, NULL, 0);
+    esp_err_t err;
+    err = httpd_resp_set_status(req, "302 Found");
+    if (err != ESP_OK)
+        return err;
+    err = httpd_resp_set_hdr(req, "Location", "/");
+    if (err != ESP_OK)
+        return err;
+    err = httpd_resp_send(req, NULL, 0);
+    if (err != ESP_OK)
+        return err;
     return ESP_OK;
 }
 
@@ -165,7 +174,7 @@ static bool check_sta_connect(const char *ssid, const char *password) {
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
 
     // Обязательно делаем disconnect перед connect (иначе будет ESP_ERR_WIFI_CONN)
-    esp_wifi_disconnect();
+    ESP_ERROR_CHECK(esp_wifi_disconnect());
     vTaskDelay(pdMS_TO_TICKS(100));
     esp_err_t err = esp_wifi_connect();
     if (err != ESP_OK) {
@@ -192,6 +201,7 @@ static bool check_sta_connect(const char *ssid, const char *password) {
 static esp_err_t portal_post_handler(httpd_req_t *req) {
     ESP_LOGI(TAG, "POST request - URI: %s", req->uri);
 
+    esp_err_t err;
     char buf[128] = {0};
     int total_len = req->content_len;
     int received = 0, ret;
@@ -205,8 +215,13 @@ static esp_err_t portal_post_handler(httpd_req_t *req) {
 
     // Парсим форму
     char ssid[33] = {0}, password[65] = {0};
-    httpd_query_key_value(buf, "ssid", ssid, sizeof(ssid));
-    httpd_query_key_value(buf, "password", password, sizeof(password));
+    err = httpd_query_key_value(buf, "ssid", ssid, sizeof(ssid));
+    if (err != ESP_OK)
+        return err;
+    err = httpd_query_key_value(buf, "password", password, sizeof(password));
+    if (err != ESP_OK)
+        return err;
+
     strncpy(s_user_data.ssid, ssid, sizeof(s_user_data.ssid));
     strncpy(s_user_data.psk, password, sizeof(s_user_data.psk));
 
@@ -217,10 +232,12 @@ static esp_err_t portal_post_handler(httpd_req_t *req) {
     xEventGroupSetBits(s_event_group, WIFI_PORTAL_EVENT_SUCCESS);
 
     // Отображаем пользователю, что запрос ушёл и идёт попытка подключения (блокировка уже на JS)
-    httpd_resp_set_type(req, "text/html");
-    httpd_resp_sendstr(
+    err = httpd_resp_set_type(req, "text/html");
+    if (err != ESP_OK)
+        return err;
+    return httpd_resp_sendstr(
         req,
-        "<html><body "
+        "<html><head><meta charset='UTF-8'></head><body "
         "style='background:#181c20;color:#fff;font-family:sans-serif;"
         "display:flex;height:100vh;align-items:center;justify-content:center;'>"
         "<div "
@@ -239,15 +256,21 @@ static esp_err_t portal_post_handler(httpd_req_t *req) {
         "ещё раз</a></div>';"
         "},11000);</script>"
         "</div></body></html>");
-    return ESP_OK;
 }
 
 // --- 404 обработчик ---
-esp_err_t http_404_error_handler(httpd_req_t *req, httpd_err_code_t err) {
-    httpd_resp_set_status(req, "302 Temporary Redirect");
-    httpd_resp_set_hdr(req, "Location", "/");
-    httpd_resp_send(req, "Redirect to the captive portal",
-                    HTTPD_RESP_USE_STRLEN);
+esp_err_t http_404_error_handler(httpd_req_t *req, httpd_err_code_t httperr) {
+    esp_err_t err;
+    err = httpd_resp_set_status(req, "302 Temporary Redirect");
+    if (err != ESP_OK)
+        return err;
+    err = httpd_resp_set_hdr(req, "Location", "/");
+    if (err != ESP_OK)
+        return err;
+    err = httpd_resp_send(req, "Redirect to the captive portal",
+                          HTTPD_RESP_USE_STRLEN);
+    if (err != ESP_OK)
+        return err;
     ESP_LOGI(TAG, "Redirecting to root");
     return ESP_OK;
 }
@@ -267,11 +290,11 @@ void register_redirect_uris(httpd_handle_t server) {
                            .method = HTTP_GET,
                            .handler = portal_redirect_handler,
                            .user_ctx = NULL};
-        httpd_register_uri_handler(server, &uri);
+        ESP_ERROR_CHECK(httpd_register_uri_handler(server, &uri));
     }
 }
 
-void start_captive_portal_httpd(httpd_handle_t *server) {
+static void start_captive_portal_httpd(httpd_handle_t *server) {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.server_port = 80;
 
@@ -284,16 +307,16 @@ void start_captive_portal_httpd(httpd_handle_t *server) {
                             .method = HTTP_GET,
                             .handler = portal_root_get_handler,
                             .user_ctx = NULL};
-    httpd_register_uri_handler(*server, &root_uri);
+    ESP_ERROR_CHECK(httpd_register_uri_handler(*server, &root_uri));
 
     httpd_uri_t post_handler = {.uri = "/", // POST только на корень
                                 .method = HTTP_POST,
                                 .handler = portal_post_handler,
                                 .user_ctx = NULL};
-    httpd_register_uri_handler(*server, &post_handler);
+    ESP_ERROR_CHECK(httpd_register_uri_handler(*server, &post_handler));
 
-    httpd_register_err_handler(*server, HTTPD_404_NOT_FOUND,
-                               http_404_error_handler);
+    ESP_ERROR_CHECK(httpd_register_err_handler(*server, HTTPD_404_NOT_FOUND,
+                                               http_404_error_handler));
 
     register_redirect_uris(*server);
 }
@@ -304,10 +327,6 @@ wifi_credentials_t start_wifi_captive_portal(const char *ap_ssid,
     memset(&s_user_data, 0, sizeof(s_user_data));
     s_event_group = xEventGroupCreate();
 
-    // Init NVS и netif
-    nvs_flash_init();
-    esp_netif_init();
-    esp_event_loop_create_default();
     esp_netif_t *ap_netif = esp_netif_create_default_wifi_ap();
 
     // Статический IP для AP
@@ -319,14 +338,14 @@ wifi_credentials_t start_wifi_captive_portal(const char *ap_ssid,
     ip_info.gw.addr = ip.addr;
     ip4addr_aton(CAPTIVE_PORTAL_NETMASK, &ip);
     ip_info.netmask.addr = ip.addr;
-    esp_netif_dhcps_stop(ap_netif);
-    esp_netif_set_ip_info(ap_netif, &ip_info);
-    esp_netif_dhcps_start(ap_netif);
+    ESP_ERROR_CHECK(esp_netif_dhcps_stop(ap_netif));
+    ESP_ERROR_CHECK(esp_netif_set_ip_info(ap_netif, &ip_info));
+    ESP_ERROR_CHECK(esp_netif_dhcps_start(ap_netif));
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    esp_wifi_init(&cfg);
-    esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID,
-                                        &wifi_event_handler, NULL, NULL);
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(
+        WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL, NULL));
 
     wifi_config_t wifi_config = {0};
     strncpy((char *)wifi_config.ap.ssid, ap_ssid, sizeof(wifi_config.ap.ssid));
@@ -338,9 +357,9 @@ wifi_credentials_t start_wifi_captive_portal(const char *ap_ssid,
     wifi_config.ap.authmode =
         (strlen(ap_password) == 0) ? WIFI_AUTH_OPEN : WIFI_AUTH_WPA2_PSK;
     wifi_config.ap.pmf_cfg.required = false;
-    esp_wifi_set_mode(WIFI_MODE_AP);
-    esp_wifi_set_config(WIFI_IF_AP, &wifi_config);
-    esp_wifi_start();
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_config));
+    ESP_ERROR_CHECK(esp_wifi_start());
 
     // DNS сервер
     xTaskCreatePinnedToCore(dns_server_task, "dns_server", 4096, NULL, 5, NULL,
@@ -359,9 +378,10 @@ wifi_credentials_t start_wifi_captive_portal(const char *ap_ssid,
             ESP_LOGI(TAG, "WiFi credentials are valid, stopping AP...");
             if (server)
                 httpd_stop(server);
-            esp_wifi_set_mode(WIFI_MODE_STA);
-            esp_wifi_set_config(WIFI_IF_AP, NULL); // отключить AP
-            esp_wifi_stop();
+            ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+            // ESP_ERROR_CHECK(
+            //     esp_wifi_set_config(WIFI_IF_AP, NULL)); // отключить AP
+            ESP_ERROR_CHECK(esp_wifi_stop());
             break;
         } else {
             s_user_data.success = false;

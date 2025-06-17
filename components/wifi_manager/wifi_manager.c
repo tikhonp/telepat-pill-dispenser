@@ -121,7 +121,7 @@ esp_err_t wm_wifi_sta_do_connect(wifi_config_t wifi_config, bool wait) {
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
     esp_err_t ret = esp_wifi_connect();
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "WiFi connect failed! ret:%x", ret);
+        ESP_LOGE(TAG, "WiFi connect failed! Error: %s", esp_err_to_name(ret));
         return ret;
     }
     if (wait) {
