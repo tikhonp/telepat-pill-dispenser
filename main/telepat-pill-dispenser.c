@@ -16,7 +16,6 @@
 #include "schedule_data.h"
 #include "send_event_data.h"
 #include "sleep_controller.h"
-#include "wifi_creds.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/time.h>
