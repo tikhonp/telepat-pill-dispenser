@@ -19,6 +19,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/time.h>
+#include "esp_sleep.h"
 
 #define TAG "telepat-pill-dispenser"
 
@@ -66,6 +67,13 @@ static void main_flow(void) {
         ESP_ERROR_CHECK(nvs_flash_erase());
         err = nvs_flash_init();
     }
+
+    esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
+    if (cause == ESP_SLEEP_WAKEUP_EXT1) {
+        ESP_LOGI(TAG, "Woke up by button");
+    }
+    ESP_LOGI(TAG, cause);
+
     ESP_ERROR_CHECK(err);
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());

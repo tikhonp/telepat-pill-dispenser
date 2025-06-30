@@ -8,6 +8,10 @@
 #include <stdint.h>
 #include <sys/param.h>
 #include <sys/time.h>
+#include "sdkconfig.h"
+#include "driver/rtc_io.h" 
+
+#define RESET_BUTTON_MASK (1ULL << CONFIG_RESET_BUTTON_PIN)
 
 void de_sleep(void) {
     struct timeval tv;
@@ -37,5 +41,9 @@ void de_sleep(void) {
     ESP_LOGI("SLEEP", "Enabling timer wakeup, %" PRIu64 "s\n", wakeup_time_sec);
     ESP_ERROR_CHECK(
         esp_sleep_enable_timer_wakeup(wakeup_time_sec * 1000 * 1000));
+    ESP_ERROR_CHECK(esp_deep_sleep_enable_gpio_wakeup(
+        RESET_BUTTON_MASK,
+        0
+    ));
     esp_deep_sleep_start();
 }

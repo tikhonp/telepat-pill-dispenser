@@ -19,6 +19,8 @@ static EventGroupHandle_t s_event_group;
 static wifi_credentials_t s_user_data = {0};
 #define WIFI_PORTAL_EVENT_SUCCESS BIT0
 
+#define CAPTIVE_URL "http://192.168.0.1/"
+
 // --- DNS сервер (всегда отвечает 192.168.0.1) ---
 static void dns_server_task(void *pvParameters) {
     int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
@@ -136,7 +138,7 @@ static esp_err_t portal_redirect_handler(httpd_req_t *req) {
     err = httpd_resp_set_status(req, "302 Found");
     if (err != ESP_OK)
         return err;
-    err = httpd_resp_set_hdr(req, "Location", "/");
+    err = httpd_resp_set_hdr(req, "Location", CAPTIVE_URL);
     if (err != ESP_OK)
         return err;
     err = httpd_resp_send(req, NULL, 0);

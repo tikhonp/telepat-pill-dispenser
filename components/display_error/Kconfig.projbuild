@@ -1,0 +1,7 @@
+menu "Reset config"
+    config RESET_BUTTON_PIN
+        int "Reset button pin"
+        default 2
+        help
+            Reset button pin
+endmenu
