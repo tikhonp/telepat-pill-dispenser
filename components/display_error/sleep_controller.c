@@ -1,15 +1,15 @@
 #include "sleep_controller.h"
+#include "driver/gpio.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_sleep.h"
+#include "hal/gpio_types.h"
 #include "medsenger_refresh_rate.h"
 #include "schedule_data.h"
 #include "sdkconfig.h"
 #include <stdint.h>
 #include <sys/param.h>
 #include <sys/time.h>
-#include "sdkconfig.h"
-#include "driver/rtc_io.h" 
 
 #define RESET_BUTTON_MASK (1ULL << CONFIG_RESET_BUTTON_PIN)
 
@@ -38,12 +38,18 @@ void de_sleep(void) {
     else
         wakeup_time_sec = medsenger_refresh_rate;
 
+    gpio_config_t wakeup_button_conf = {
+        .pin_bit_mask = RESET_BUTTON_MASK,
+        .mode = GPIO_MODE_INPUT,
+        .pull_up_en = 1,
+        .pull_down_en = 0,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+    gpio_config(&wakeup_button_conf);
+
     ESP_LOGI("SLEEP", "Enabling timer wakeup, %" PRIu64 "s\n", wakeup_time_sec);
     ESP_ERROR_CHECK(
         esp_sleep_enable_timer_wakeup(wakeup_time_sec * 1000 * 1000));
-    ESP_ERROR_CHECK(esp_deep_sleep_enable_gpio_wakeup(
-        RESET_BUTTON_MASK,
-        0
-    ));
+    ESP_ERROR_CHECK(esp_deep_sleep_enable_gpio_wakeup(RESET_BUTTON_MASK, 0));
     esp_deep_sleep_start();
 }

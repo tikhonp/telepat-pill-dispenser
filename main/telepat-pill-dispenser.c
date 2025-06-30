@@ -8,6 +8,7 @@
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_netif.h"
+#include "esp_sleep.h"
 #include "freertos/FreeRTOS.h" // IWYU pragma: export
 #include "init_global_manager.h"
 #include "medsenger_http_requests.h"
@@ -19,7 +20,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/time.h>
-#include "esp_sleep.h"
 
 #define TAG "telepat-pill-dispenser"
 
@@ -72,7 +72,7 @@ static void main_flow(void) {
     if (cause == ESP_SLEEP_WAKEUP_EXT1) {
         ESP_LOGI(TAG, "Woke up by button");
     }
-    ESP_LOGI(TAG, cause);
+    ESP_LOGI(TAG, "wakeup cause: %d", cause);
 
     ESP_ERROR_CHECK(err);
     ESP_ERROR_CHECK(esp_netif_init());
