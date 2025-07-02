@@ -6,12 +6,8 @@ Now primary board is esp32c3
 
 Main logic:
 
-![logic scheme](logic.jpg)
+![logic scheme](docs/logic.png)
 
 Memory layout
 
-![memory layout](memory-layout.jpg)
-
-# PINOUT
-
-![esp32c3](esp32c3_supermini_pinout.png)
+![memory layout](docs/memory-layout.jpg)
