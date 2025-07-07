@@ -9,4 +9,4 @@
  *
  * @return esp_err_t ESP_OK при успехе, иначе ошибка из esp_err.h
  */
-esp_err_t clean_all(void);
+esp_err_t nvs_clean_all(void);

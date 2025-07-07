@@ -9,7 +9,10 @@
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_sleep.h"
-#include "freertos/FreeRTOS.h" // IWYU pragma: export
+#include "driver/gpio.h"
+#include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "init_global_manager.h"
 #include "medsenger_http_requests.h"
 #include "medsenger_synced.h"
@@ -17,6 +20,8 @@
 #include "schedule_data.h"
 #include "send_event_data.h"
 #include "sleep_controller.h"
+#include "cleaner.h"
+#include "sdkconfig.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/time.h>
@@ -67,10 +72,32 @@ static void main_flow(void) {
         ESP_ERROR_CHECK(nvs_flash_erase());
         err = nvs_flash_init();
     }
-
     esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
-    if (cause == ESP_SLEEP_WAKEUP_EXT1) {
-        ESP_LOGI(TAG, "Woke up by button");
+
+    if (cause == 7) {
+        ESP_LOGI(TAG, "Woke up by EXT1 (reset button).");
+
+        gpio_config_t io_conf = {
+            .pin_bit_mask = 1ULL << CONFIG_RESET_BUTTON_PIN,
+            .mode = GPIO_MODE_INPUT,
+            .pull_up_en = GPIO_PULLUP_ENABLE,
+            .pull_down_en = GPIO_PULLDOWN_DISABLE,
+            .intr_type = GPIO_INTR_DISABLE
+        };
+        gpio_config(&io_conf);
+        if (gpio_get_level(CONFIG_RESET_BUTTON_PIN) == 0) {
+            ESP_LOGI(TAG, "Button pressed, waiting %d ms to confirm hold...", CONFIG_RESET_HOLD_TIME_MS);
+            vTaskDelay(pdMS_TO_TICKS(CONFIG_RESET_HOLD_TIME_MS));
+            
+            if (gpio_get_level(CONFIG_RESET_BUTTON_PIN) == 0) {
+                ESP_LOGI(TAG, "Button held for %d ms. Resetting NVS.", CONFIG_RESET_HOLD_TIME_MS);
+                nvs_clean_all();
+            } else {
+                ESP_LOGI(TAG, "Button was released before timeout.");
+            }
+        } else {
+            ESP_LOGI(TAG, "Button not pressed.");
+        }
     }
     ESP_LOGI(TAG, "wakeup cause: %d", cause);
 
