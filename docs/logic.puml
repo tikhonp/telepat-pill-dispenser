@@ -1,0 +1,112 @@
+@startuml
+!pragma layout activityBeta
+
+start
+:App Launch;
+if (App Was waked up by reset button?) then (yes)
+    :Reset all cells;
+    :Clear all unsaved data;
+    :Clear wi-fi credentials;
+    :call reset;
+    stop
+endif
+:Wi‑Fi Connect;
+if (Wi‑Fi Connected?) then (yes)
+    :Sync Time;
+    :Fetch Data;
+    if (Fetch OK?) then (yes)
+        :Save Data to Flash;
+    else (no)
+        note right: fallback to last saved data
+    endif
+    :Load Unsaved submissions Data from Flash;
+    if (Load OK?) then (yes)
+        :Send All Saved Confirmations;
+        if (Any cell has a time slot?) then (yes)
+            fork
+                :Spawn one task per cell;
+            fork again
+                :[ Main thread continues… ];
+            end fork
+            -->[when all tasks complete] :Prepare to Sleep;
+        else (no)
+            :Prepare to Sleep;
+        endif
+    else (no)
+        :Display Error;
+        stop
+    endif
+else (no)
+    :Display Error;
+    stop
+endif
+
+:Read refresh_rate;
+:Get time to next slot;
+if (refresh_rate < time_to_next_slot?) then (yes)
+    :Sleep until now + refresh_rate;
+else (no)
+    :Sleep until next slot;
+endif
+stop
+
+' --- Cell task subactivity ---
+partition "Cell Task" {
+    start
+    if (Medsenger_synced?) then (yes)
+        :Enable cell blink and sound;
+        while (every send_interval?) is (yes)
+            :Send confirmation to Medsenger;
+            if (Send OK?) then (yes)
+            else (no)
+                :Save event on flash;
+                :Disable light;
+            endif
+        endwhile (no)
+    else (no)
+        if (Offline confirmation supported?) then (yes)
+            :Queue confirmation locally;
+            :Sound alert periodically;
+        else (no)
+            :Display Error;
+            stop
+        endif
+    endif
+    stop
+}
+
+partition "WiFi Connect" {
+    start
+    :Fetch Wi‑Fi credentials;
+    if (Credentials OK?) then (yes)
+        label padd1
+        label padd2
+        label padd3
+        label padd4
+        label padd5
+        label padd6
+        label padd7
+        label padd8
+        label conn_wifi
+        :Try to connect to Wi‑Fi;
+        if (Wi‑Fi connected?) then (yes)
+            stop
+        else (no)
+            :Display Error;
+            stop
+        endif
+    else (no)
+        :Enable Wi‑Fi AP mode;
+        if (Wifi credentials set?) then (yes)
+            :Save credentials;
+            :Disable Wi‑Fi AP mode;
+            goto conn_wifi
+        else (no)
+            :Display Error;
+            stop
+        endif
+    endif
+}
+
+@enduml
+
