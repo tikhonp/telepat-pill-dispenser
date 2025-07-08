@@ -1,0 +1,12 @@
+menu "Reset config"
+    config RESET_BUTTON_PIN
+        int "Reset button pin"
+        default 2
+        help
+            Reset button pin
+    config RESET_HOLD_TIME_MS
+        int "Reset button hold time (ms)"
+        default 5000
+        help
+            How many milliseconds button must be held on boot to trigger reset
+endmenu
