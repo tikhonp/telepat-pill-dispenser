@@ -11,6 +11,14 @@ menu "Leds display settings"
             bool "WS2812b Addressable LEDs"
     endchoice
 
+    config CDC_DEFAULT_REFRESH_RATE_SEC
+        int "Default refresh rate for server data"
+        default 3600
+        help
+            Default refresh rate for server data in seconds.
+            This is the rate at which the server will send updates to the client.
+            A lower value means more frequent updates, but may increase network traffic.
+
     config EXAMPLE_I2C_MASTER_SCL
         int "SCL GPIO Number"
         default 5 if IDF_TARGET_ESP8266

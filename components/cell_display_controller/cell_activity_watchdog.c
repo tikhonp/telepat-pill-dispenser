@@ -58,7 +58,12 @@ esp_err_t cdc_monitor(void) {
         schedule[i] = sd_get_schedule_by_cell_indx(i);
 
     uint32_t medsenger_refresh_rate;
-    ESP_ERROR_CHECK(m_get_medsenger_refresh_rate_sec(&medsenger_refresh_rate));
+    err = m_get_medsenger_refresh_rate_sec(&medsenger_refresh_rate);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to get medsenger refresh rate: %s",
+                 esp_err_to_name(err));
+        medsenger_refresh_rate = CONFIG_CDC_DEFAULT_REFRESH_RATE_SEC; // default value
+    }
 
     ESP_LOGI(TAG, "Got medsenger refresh rate: %" PRIu32,
              medsenger_refresh_rate);

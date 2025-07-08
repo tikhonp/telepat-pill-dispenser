@@ -4,6 +4,7 @@
 #include "esp_log.h"
 #include "esp_sleep.h"
 #include "hal/gpio_types.h"
+#include "led_controller.h"
 #include "medsenger_refresh_rate.h"
 #include "schedule_data.h"
 #include "sdkconfig.h"
@@ -29,7 +30,15 @@ void de_sleep(void) {
     }
 
     uint32_t medsenger_refresh_rate;
-    ESP_ERROR_CHECK(m_get_medsenger_refresh_rate_sec(&medsenger_refresh_rate));
+    esp_err_t err = m_get_medsenger_refresh_rate_sec(&medsenger_refresh_rate);
+    if (err != ESP_OK) {
+        ESP_LOGE("SLEEP", "Failed to get medsenger refresh rate: %s",
+                 esp_err_to_name(err));
+        medsenger_refresh_rate =
+            CONFIG_CDC_DEFAULT_REFRESH_RATE_SEC; // default value
+    }
+
+    de_stop_blinking();
 
     uint64_t wakeup_time_sec;
     if (nearest_cell_time != 0)
