@@ -13,7 +13,7 @@
 static const char *TAG = "leds-ws2812-controller";
 
 #define LED_GPIO       CONFIG_WS2812B_GPIO
-#define LED_COUNT      CONFIG_WS2812B_LED_COUNT
+#define LED_COUNT      CONFIG_SD_CELLS_COUNT
 #define LED_RES_HZ     (10 * 1000 * 1000) // 10MHz
 
 static led_strip_handle_t led_strip;

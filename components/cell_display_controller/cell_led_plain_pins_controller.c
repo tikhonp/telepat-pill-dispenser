@@ -5,10 +5,10 @@
 #include <stdint.h>
 
 static const uint8_t cdc_cell_indx_to_gpio_map[] = {
-    4,
+    1,
     2,
     3,
-    1,
+    4,
 };
 
 void cdc_init_led_signals(void) {

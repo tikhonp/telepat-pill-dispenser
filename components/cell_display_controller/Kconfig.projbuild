@@ -43,11 +43,4 @@ menu "Leds display settings"
         default 18
         help
             GPIO pin used to drive WS2812B data line.
-
-    config WS2812B_LED_COUNT
-        int "Number of WS2812B LEDs"
-        depends on CDC_LEDS_WS2812B
-        default 28
-        help
-            Number of addressable WS2812B LEDs in the strip.
 endmenu

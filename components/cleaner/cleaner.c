@@ -2,7 +2,7 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "esp_system.h"
-#include "freertos/FreeRTOS.h"
+#include "freertos/FreeRTOS.h" // IWYU pragma: export
 
 static const char *TAG = "cleaner";
 
