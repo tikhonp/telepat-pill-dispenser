@@ -12,5 +12,6 @@ idf_component_register(SRCS "telepat-pill-dispenser.c"
                         cell_display_controller
                         captive_portal
                         cleaner
+                        battery_controller
                         esp_driver_gpio
                         INCLUDE_DIRS ".")

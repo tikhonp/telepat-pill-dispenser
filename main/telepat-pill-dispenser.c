@@ -21,6 +21,7 @@
 #include "sdkconfig.h"
 #include "send_event_data.h"
 #include "sleep_controller.h"
+#include "battery_controller.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/time.h>
@@ -63,7 +64,10 @@ static void send_saved_on_flash_events() {
 
 static void main_flow(void) {
     ESP_LOGI(TAG, "Starting pill-dispenser...");
-
+    battery_monitor_init();
+    float voltage = battery_monitor_read_voltage();
+    ESP_LOGI(TAG, "Battery voltage: %.2f V\n", voltage);
+    
     // Initialize NVS, network and freertos
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES ||
