@@ -47,6 +47,23 @@ static const BlinkPattern stay_holding_pattern = {
     .step_count = sizeof(stay_holding_steps) / sizeof(BlinkStep),
 };
 
+static const BlinkStep reset_steps[] = {
+    {255, 0, 0, 150},
+    {0, 0, 0, 150},
+};
+static const BlinkPattern reset_pattern = {
+    .steps = reset_steps,
+    .step_count = sizeof(reset_steps) / sizeof(BlinkStep),
+};
+
+static const BlinkStep OK_steps[] = {
+    {0, 255, 0, 350},
+    {0, 0, 0, 350},
+};
+static const BlinkPattern OK_pattern = {
+    .steps = OK_steps,
+    .step_count = sizeof(OK_steps) / sizeof(BlinkStep),
+};
 
 // Инициализация ленты (один раз)
 static void init_led_strip_once(void) {
@@ -101,6 +118,12 @@ void de_start_blinking(int error_code) {
     switch (error_code) {
         case 101: // Example error code for red
             pattern = &stay_holding_pattern;
+            break;
+        case 102:
+            pattern = &reset_pattern;
+            break;
+        case 103:
+            pattern = &OK_pattern;
             break;
         default:
             pattern = &red_pattern;

@@ -98,6 +98,9 @@ static void main_flow(void) {
             if (gpio_get_level(CONFIG_RESET_BUTTON_PIN) != 0) {
                 ESP_LOGI(TAG, "Button was released before timeout.");
                 de_stop_blinking();
+                de_start_blinking(103);
+                vTaskDelay(pdMS_TO_TICKS(1000));
+                de_stop_blinking();
                 break;
             }
             vTaskDelay(pdMS_TO_TICKS(10));
@@ -107,6 +110,7 @@ static void main_flow(void) {
             if (elapsed >= CONFIG_RESET_HOLD_TIME_MS && gpio_get_level(CONFIG_RESET_BUTTON_PIN) == 0) {
             ESP_LOGI(TAG, "Button held for %d ms. Resetting NVS.",
                  CONFIG_RESET_HOLD_TIME_MS);
+            de_start_blinking(102);
             nvs_clean_all();
             }
         } else {
