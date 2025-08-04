@@ -27,6 +27,8 @@ static void de_run_display_error(void *params) {
     
     ESP_LOGI(TAG, "Starting display error for %d", error);
     de_start_blinking(error);
+    
+    vTaskDelay(pdMS_TO_TICKS(2000));
 
     b_play_notification(FATAL_ERROR);
 

@@ -103,6 +103,26 @@ void cdc_deinit_led_signals(void) {
     update_leds_strip();
     xSemaphoreGive(leds_mu);
     ESP_LOGI(TAG, "WS2812B deinit complete");
+    // Delete LED strip driver and free resources
+    led_strip_del(led_strip);
+    led_strip = NULL;
+    leds_initialized = false;
+    vSemaphoreDelete(leds_mu);
 }
 
+// Set a specific RGB color on a single LED immediately
+void cdc_set_signal_color(uint8_t indx, uint8_t r, uint8_t g, uint8_t b) {
+    if (!leds_initialized || led_strip == NULL) {
+        ESP_LOGW(TAG, "LEDs not initialized, cannot set color");
+        return;
+    }
+    if (indx >= LED_COUNT) {
+        ESP_LOGW(TAG, "Invalid LED index: %d", indx);
+        return;
+    }
+    xSemaphoreTake(leds_mu, portMAX_DELAY);
+    led_strip_set_pixel(led_strip, indx, r, g, b);
+    led_strip_refresh(led_strip);
+    xSemaphoreGive(leds_mu);
+}
 #endif

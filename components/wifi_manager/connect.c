@@ -48,23 +48,44 @@ esp_err_t wm_connect(bool extended_debug) {
         xTaskCreate(debug_blink_task, "dbg-blink", 2048, NULL, 5, &debug_blink_handle);
     }
     esp_err_t conn_ret = wm_wifi_connect(creds);
+    // Indicate connection status with static color when not in debug
+    if (!extended_debug && false) {
+        // green for success, red for failure
+        for (uint8_t i = 0; i < CONFIG_SD_CELLS_COUNT; i++) {
+            if (conn_ret == ESP_OK) {
+                cdc_set_signal_color(i, 0, 255, 0);
+            } else {
+                cdc_set_signal_color(i, 255, 0, 0);
+            }
+        }
+        // hold color for 2 seconds
+        vTaskDelay(pdMS_TO_TICKS(2000));
+        // keep final color until deinit later
+    }
     if (extended_debug) {
         // stop loading blink
         if (debug_blink_handle) vTaskDelete(debug_blink_handle);
-        // final color blink for 3s
-        uint32_t end = esp_timer_get_time() + 3000000;
+        // final color blink for 2s
+        uint32_t end = esp_timer_get_time() + 2000000;
         bool color_on = true;
         while (esp_timer_get_time() < end) {
-            // set color: green for success, red for error
+            // blink final status: green for success, red for error
             for (uint8_t i = 0; i < CONFIG_SD_CELLS_COUNT; i++) {
-                if (conn_ret == ESP_OK && color_on) cdc_enable_signal(i);
-                else if (conn_ret != ESP_OK && color_on) cdc_enable_signal(i);
-                else cdc_disable_signal(i);
+                if (color_on) {
+                    if (conn_ret == ESP_OK) {
+                        cdc_set_signal_color(i, 0, 255, 0);
+                    } else {
+                        cdc_set_signal_color(i, 255, 0, 0);
+                    }
+                } else {
+                    cdc_disable_signal(i);
+                }
             }
             color_on = !color_on;
             vTaskDelay(pdMS_TO_TICKS(500));
         }
         cdc_deinit_led_signals();
+        cdc_init_led_signals();  // restore RMT/LED signals to initial state
     }
     if (conn_ret != ESP_OK) {
         return ESP_FAIL;

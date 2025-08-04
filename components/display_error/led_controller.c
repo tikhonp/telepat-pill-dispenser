@@ -8,8 +8,10 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <esp_log.h>
+#include <esp_err.h>
 #include <string.h>
 #include <stdbool.h>
+#include "cell_led_controller.h"
 
 #define LED_GPIO_NUM CONFIG_WS2812B_GPIO
 #define LED_COUNT CONFIG_SD_CELLS_COUNT
@@ -97,11 +99,10 @@ static const BlinkPattern connected_pattern = {
 
 
 // Инициализация ленты (один раз)
+// Initialize the LED strip on first successful attempt
 static void init_led_strip_once(void) {
     static bool initialized = false;
-    static bool init_attempted = false;
-    if (init_attempted) return;
-    init_attempted = true;
+    if (initialized) return;
 
     led_strip_config_t strip_config = {
         .strip_gpio_num = LED_GPIO_NUM,
@@ -118,7 +119,7 @@ static void init_led_strip_once(void) {
 
     esp_err_t ret = led_strip_new_rmt_device(&strip_config, &rmt_config, &led_strip);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "WS2812B init failed (error %d), LED indicator disabled", ret);
+        ESP_LOGE(TAG, "WS2812B init failed (error %d), will retry on next blink", ret);
         return;
     }
     initialized = true;
@@ -158,6 +159,7 @@ static void led_smooth_transition(uint8_t r0, uint8_t g0, uint8_t b0,
 
 // Задача мигания (паттерн повторяется по кругу)
 static void led_blink_pattern_task(void *param) {
+    ESP_LOGI(TAG, "Blink task started with pattern");
     const BlinkPattern *pattern = (const BlinkPattern *)param;
     uint8_t prev_r = 0, prev_g = 0, prev_b = 0;
     bool first = true;
@@ -176,6 +178,7 @@ static void led_blink_pattern_task(void *param) {
             prev_r = step->r;
             prev_g = step->g;
             prev_b = step->b;
+            ESP_LOGI(TAG, "LEDs set to R:%d G:%d B:%d for %lu ms", step->r, step->g, step->b, (unsigned long)step->duration_ms);
             first = false;
         }
     }
@@ -183,6 +186,8 @@ static void led_blink_pattern_task(void *param) {
 
 // Старт мигания с выбором паттерна по error_code
 void de_start_blinking(int error_code) {
+    // Free the cell display controller's RMT driver to allow our own init
+    cdc_deinit_led_signals();
     init_led_strip_once();
 
     // Если уже запущена задача и error_code совпадает, ничего не делаем
