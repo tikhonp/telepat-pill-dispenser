@@ -1,11 +1,11 @@
 #include "battery_controller.h"
 
-#include "esp_adc/adc_oneshot.h"
 #include "esp_adc/adc_cali.h"
 #include "esp_adc/adc_cali_scheme.h"
+#include "esp_adc/adc_oneshot.h"
 
-#define BATTERY_ADC_UNIT     ADC_UNIT_1
-#define BATTERY_ADC_CHANNEL  ADC_CHANNEL_3  // GPIO3
+#define BATTERY_ADC_UNIT ADC_UNIT_1
+#define BATTERY_ADC_CHANNEL ADC_CHANNEL_3 // GPIO3
 #define BATTERY_DIVIDER_RATIO 1.3f
 
 static adc_oneshot_unit_handle_t adc_handle;
@@ -20,7 +20,7 @@ void battery_monitor_init(void) {
 
     adc_oneshot_chan_cfg_t chan_config = {
         .bitwidth = ADC_BITWIDTH_DEFAULT,
-        .atten = ADC_ATTEN_DB_12,  // заменить DB_11 на DB_12 (они эквивалентны)
+        .atten = ADC_ATTEN_DB_12, // заменить DB_11 на DB_12 (они эквивалентны)
     };
     adc_oneshot_config_channel(adc_handle, BATTERY_ADC_CHANNEL, &chan_config);
 
@@ -30,22 +30,23 @@ void battery_monitor_init(void) {
         .bitwidth = ADC_BITWIDTH_DEFAULT,
     };
 
-    if (adc_cali_create_scheme_curve_fitting(&cali_config, &adc_cali_handle) == ESP_OK) {
+    if (adc_cali_create_scheme_curve_fitting(&cali_config, &adc_cali_handle) ==
+        ESP_OK) {
         do_calibration = true;
     }
 }
 
-float battery_monitor_read_voltage(void) {
+int battery_monitor_read_voltage(void) {
     int raw = 0;
     adc_oneshot_read(adc_handle, BATTERY_ADC_CHANNEL, &raw);
 
-    int voltage_mv = 0;
+    int voltage_adc_mv = 0;
     if (do_calibration) {
-        adc_cali_raw_to_voltage(adc_cali_handle, raw, &voltage_mv);
+        adc_cali_raw_to_voltage(adc_cali_handle, raw, &voltage_adc_mv);
     } else {
-        voltage_mv = (raw * 3300) / 4095;  // fallback
+        voltage_adc_mv = (raw * 3300) / 4095; // fallback
     }
 
-    float vbat = (voltage_mv / 1000.0f) * BATTERY_DIVIDER_RATIO;
-    return vbat;
+    int vbat_mv = (int)(voltage_adc_mv * BATTERY_DIVIDER_RATIO + 0.5f);
+    return vbat_mv;
 }
