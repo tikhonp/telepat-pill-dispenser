@@ -132,6 +132,7 @@ static void main_flow(void) {
     b_init();
     bc_init();
     de_init();
+    cdc_deinit_led_signals();
     cdc_init_led_signals();
 
     // gm_set_wifi_creds(NULL);
