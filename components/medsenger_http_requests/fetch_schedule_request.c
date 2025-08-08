@@ -1,3 +1,4 @@
+#include "battery_controller.h"
 #include "esp_err.h"
 #include "esp_http_client.h"
 #include "esp_log.h"
@@ -7,6 +8,7 @@
 #include "medsenger_refresh_rate.h"
 #include "pilld_common.h"
 #include <stdint.h>
+#include <stdlib.h>
 
 static mhr_schedule_handler mhr_handler;
 static esp_err_t mhr_handler_errored;
@@ -119,12 +121,22 @@ static esp_err_t _mhr_http_event_handler(esp_http_client_event_t *evt) {
     return ESP_OK;
 }
 
-static esp_err_t mhr_fetch_schedule_do_request(mhr_schedule_handler h) {
+static esp_err_t mhr_fetch_schedule_do_request(mhr_schedule_handler h,
+                                               int battery_voltage) {
     mhr_handler = h;
+    char query_buffer[128];
+    int needed =
+        snprintf(query_buffer, sizeof(query_buffer),
+                 "serial_number=" CONFIG_SERIAL_NUMBER "&battery_voltage=%d",
+                 battery_voltage);
+    if (needed < 0 || needed >= sizeof(query_buffer)) {
+        ESP_LOGE(TAG, "Failed to create query string for HTTP request");
+        return ESP_ERR_INVALID_ARG;
+    }
     esp_http_client_config_t config = {
         .host = CONFIG_HTTP_ENDPOINT,
         .path = CONFIG_FETCH_SCHEDULE_QUERY_PATH,
-        .query = "serial_number=" CONFIG_SERIAL_NUMBER,
+        .query = query_buffer,
         .transport_type = HTTP_TRANSPORT_OVER_SSL,
         .event_handler = _mhr_http_event_handler,
         .cert_pem = howsmyssl_com_root_cert_pem_start,
@@ -136,11 +148,12 @@ static esp_err_t mhr_fetch_schedule_do_request(mhr_schedule_handler h) {
 }
 
 esp_err_t mhr_fetch_schedule(mhr_schedule_handler h) {
+    int voltage = battery_monitor_read_voltage();
     esp_err_t err;
     int mhr_retries = CONFIG_REQUEST_RETRY_COUNT + 1;
     for (; mhr_retries > 0; --mhr_retries) {
         mhr_handler_errored = ESP_OK;
-        err = mhr_fetch_schedule_do_request(h);
+        err = mhr_fetch_schedule_do_request(h, voltage);
         if (err == ESP_OK) {
             if (mhr_handler_errored == ESP_OK)
                 return ESP_OK;

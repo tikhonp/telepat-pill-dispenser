@@ -66,8 +66,8 @@ static void send_saved_on_flash_events() {
 static void main_flow(void) {
     ESP_LOGI(TAG, "Starting pill-dispenser...");
     battery_monitor_init();
-    float voltage = battery_monitor_read_voltage();
-    ESP_LOGI(TAG, "Battery voltage: %.2f V\n", voltage);
+    int voltage = battery_monitor_read_voltage();
+    ESP_LOGI(TAG, "Battery voltage: %d mV\n", voltage);
     
     // Initialize NVS, network and freertos
     esp_err_t err = nvs_flash_init();
