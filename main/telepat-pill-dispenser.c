@@ -21,6 +21,8 @@
 #include "sdkconfig.h"
 #include "send_event_data.h"
 #include "sleep_controller.h"
+#include "battery_controller.h"
+#include "led_controller.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/time.h>
@@ -63,7 +65,10 @@ static void send_saved_on_flash_events() {
 
 static void main_flow(void) {
     ESP_LOGI(TAG, "Starting pill-dispenser...");
-
+    battery_monitor_init();
+    float voltage = battery_monitor_read_voltage();
+    ESP_LOGI(TAG, "Battery voltage: %.2f V\n", voltage);
+    
     // Initialize NVS, network and freertos
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES ||
@@ -74,7 +79,7 @@ static void main_flow(void) {
     esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
 
     if (cause == 7) {
-        ESP_LOGI(TAG, "Woke up by EXT1 (reset button).");
+        ESP_LOGI(TAG, "Woke up by (reset button).");
 
         gpio_config_t io_conf = {.pin_bit_mask = 1ULL
                                                  << CONFIG_RESET_BUTTON_PIN,
@@ -85,36 +90,54 @@ static void main_flow(void) {
         gpio_config(&io_conf);
         if (gpio_get_level(CONFIG_RESET_BUTTON_PIN) == 0) {
             ESP_LOGI(TAG, "Button pressed, waiting %d ms to confirm hold...",
-                     CONFIG_RESET_HOLD_TIME_MS);
-            vTaskDelay(pdMS_TO_TICKS(CONFIG_RESET_HOLD_TIME_MS));
+                 CONFIG_RESET_HOLD_TIME_MS);
+            de_start_blinking(101); 
 
-            if (gpio_get_level(CONFIG_RESET_BUTTON_PIN) == 0) {
-                ESP_LOGI(TAG, "Button held for %d ms. Resetting NVS.",
-                         CONFIG_RESET_HOLD_TIME_MS);
-                nvs_clean_all();
-            } else {
+            int elapsed = 0;
+            while (elapsed < CONFIG_RESET_HOLD_TIME_MS) {
+            if (gpio_get_level(CONFIG_RESET_BUTTON_PIN) != 0) {
                 ESP_LOGI(TAG, "Button was released before timeout.");
+                de_stop_blinking();
+                de_start_blinking(103);
+                vTaskDelay(pdMS_TO_TICKS(1000));
+                de_stop_blinking();
+                cdc_deinit_led_signals();
+                break;
+            }
+            vTaskDelay(pdMS_TO_TICKS(10));
+            elapsed += 10;
+            }
+
+            if (elapsed >= CONFIG_RESET_HOLD_TIME_MS && gpio_get_level(CONFIG_RESET_BUTTON_PIN) == 0) {
+            ESP_LOGI(TAG, "Button held for %d ms. Resetting NVS.",
+                 CONFIG_RESET_HOLD_TIME_MS);
+                de_start_blinking(102);
+                nvs_clean_all();
             }
         } else {
             ESP_LOGI(TAG, "Button not pressed.");
         }
+        de_stop_blinking();
     }
     ESP_LOGI(TAG, "wakeup cause: %d", cause);
 
     ESP_ERROR_CHECK(err);
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
+    // determine debug mode from wakeup cause, skip if NVS reset performed
+    bool extended_debug = (cause == 7);
 
     sd_init();
     gm_init();
     b_init();
     bc_init();
     de_init();
+    cdc_deinit_led_signals();
     cdc_init_led_signals();
 
     // gm_set_wifi_creds(NULL);
 
-    if (wm_connect() != ESP_OK) {
+    if (wm_connect(extended_debug) != ESP_OK) {
         gm_set_medsenger_synced(false);
         ESP_LOGE(TAG, "Failed to connect to wi-fi");
         err = sd_load_schedule_from_flash();
@@ -133,7 +156,10 @@ static void main_flow(void) {
         send_saved_on_flash_events();
     sd_print_schedule();
 
-    vTaskDelay(2000 / portTICK_PERIOD_MS);
+    // freeze 2s to display connection status when in debug mode
+    if (extended_debug) {
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
+    }
 
     err = cdc_monitor();
     if (err != ESP_OK)
@@ -143,6 +169,7 @@ static void main_flow(void) {
         ESP_LOGI(TAG, "PREPARE SLEEP");
 
     ESP_ERROR_CHECK(wm_disconnect());
+    de_stop_blinking();
     cdc_deinit_led_signals();
     de_sleep();
 }

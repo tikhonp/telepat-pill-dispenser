@@ -24,12 +24,18 @@ static void de_run_display_error(void *params) {
     ESP_LOGE(TAG, "Fired");
 
     gm_fire_stop_all_tasks();
+    
+    ESP_LOGI(TAG, "Starting display error for %d", error);
+    de_start_blinking(error);
+    ESP_LOGI(TAG, "Blinking started");
 
-    de_start_blinking();
-
+    vTaskDelay(pdMS_TO_TICKS(2000));
+    ESP_LOGI(TAG, "Playing notification sound");
     b_play_notification(FATAL_ERROR);
-
+    
+    ESP_LOGI(TAG, "Waiting for button press to reset");
     bc_wait_for_single_press();
+    ESP_LOGI(TAG, "Button pressed, stopping blinking");
 
     esp_restart();
 
