@@ -1,16 +1,4 @@
 menu "Leds display settings"
-    choice CDC_LEDS_TYPE
-        prompt "Type of hardware for leds controller"
-        default CDC_LEDS_PLAIN_PINS
-
-        config CDC_LEDS_PLAIN_PINS
-            bool "Plain Pins"
-        config CDC_LEDS_MATRIX
-            bool "Matrix"
-        config CDC_LEDS_WS2812B
-            bool "WS2812b Addressable LEDs"
-    endchoice
-
     config EXAMPLE_I2C_MASTER_SCL
         int "SCL GPIO Number"
         default 5 if IDF_TARGET_ESP8266
@@ -39,7 +27,6 @@ menu "Leds display settings"
     
     config WS2812B_GPIO
         int "WS2812B data GPIO"
-        depends on CDC_LEDS_WS2812B
         default 18
         help
             GPIO pin used to drive WS2812B data line.
