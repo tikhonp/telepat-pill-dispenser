@@ -4,7 +4,7 @@
 #ifdef CONFIG_CDC_LEDS_WS2812B
 
 #include "sdkconfig.h"
-#include <led_strip.h>
+#include "ws2812b_controller.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <esp_log.h>
@@ -12,7 +12,6 @@
 
 #define LED_GPIO_NUM CONFIG_WS2812B_GPIO
 #define LED_COUNT CONFIG_SD_CELLS_COUNT
-#define LED_RES_HZ (10 * 1000 * 1000) // 10 MHz
 
 #define TAG "led-blinker"
 
@@ -26,7 +25,6 @@ typedef struct {
     size_t step_count;
 } BlinkPattern;
 
-static led_strip_handle_t led_strip = NULL;
 static TaskHandle_t blink_task_handle = NULL;
 
 static const BlinkStep red_steps[] = {
@@ -50,24 +48,11 @@ static const BlinkPattern stay_holding_pattern = {
 
 // Инициализация ленты (один раз)
 static void init_led_strip_once(void) {
-    static bool initialized = false;
-    if (initialized) return;
-
-    led_strip_config_t strip_config = {
-        .strip_gpio_num = LED_GPIO_NUM,
-        .max_leds = LED_COUNT,
-        .led_pixel_format = LED_PIXEL_FORMAT_GRB,
-        .led_model = LED_MODEL_WS2812,
-        .flags.invert_out = false,
-    };
-    led_strip_rmt_config_t rmt_config = {
-        .clk_src = RMT_CLK_SRC_DEFAULT,
-        .resolution_hz = LED_RES_HZ,
-        .mem_block_symbols = 0,
-    };
-
-    ESP_ERROR_CHECK(led_strip_new_rmt_device(&strip_config, &rmt_config, &led_strip));
-    initialized = true;
+    if (!ws2812b_is_initialized()) {
+        if (!ws2812b_init(LED_GPIO_NUM, LED_COUNT)) {
+            ESP_LOGE(TAG, "Failed to initialize WS2812B strip");
+        }
+    }
 }
 
 // Задача мигания (паттерн повторяется по кругу)
@@ -76,10 +61,8 @@ static void led_blink_pattern_task(void *param) {
     while (true) {
         for (size_t i = 0; i < pattern->step_count; ++i) {
             const BlinkStep *step = &pattern->steps[i];
-            for (int j = 0; j < LED_COUNT; ++j) {
-                led_strip_set_pixel(led_strip, j, step->r, step->g, step->b);
-            }
-            led_strip_refresh(led_strip);
+            ws2812b_set_all_pixels(step->r, step->g, step->b);
+            ws2812b_refresh();
             vTaskDelay(pdMS_TO_TICKS(step->duration_ms));
         }
         // После завершения паттерна цикл повторяется (по кругу)
@@ -115,24 +98,15 @@ void de_stop_blinking(void) {
         vTaskDelete(blink_task_handle);
         blink_task_handle = NULL;
         // Выключить все светодиоды
-        for (int j = 0; j < LED_COUNT; ++j) {
-            led_strip_set_pixel(led_strip, j, 0, 0, 0);
-        }
-        led_strip_refresh(led_strip);
+        ws2812b_clear_all();
     }
 }
 
 // Функция деинициализации ленты
 void de_led_strip_deinit(void) {
-    if (led_strip != NULL) {
-        // Выключить все светодиоды перед удалением
-        for (int j = 0; j < LED_COUNT; ++j) {
-            led_strip_set_pixel(led_strip, j, 0, 0, 0);
-        }
-        led_strip_refresh(led_strip);
-        led_strip_del(led_strip);
-        led_strip = NULL;
-    }
+    de_stop_blinking();
+    // Ленту не деинициализируем, так как она может использоваться другими компонентами
+    // Очистка ленты уже произведена в de_stop_blinking
 }
 
 #else
