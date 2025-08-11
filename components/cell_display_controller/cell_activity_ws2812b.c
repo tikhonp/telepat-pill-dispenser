@@ -81,6 +81,10 @@ void cdc_disable_signal(uint8_t indx) {
 }
 
 void cdc_deinit_led_signals(void) {
+    if (leds_mu == NULL) {
+        ESP_LOGW(TAG, "LED semaphore not initialized, skipping deinit");
+        return;
+    }
     xSemaphoreTake(leds_mu, portMAX_DELAY);
     memset(leds_state, 0, sizeof(leds_state));
     update_leds_strip();
