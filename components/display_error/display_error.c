@@ -27,6 +27,7 @@ static void de_run_display_error(void *params) {
     
     ESP_LOGI(TAG, "Starting display error for %d", error);
     de_start_blinking(error);
+
     b_play_notification(FATAL_ERROR);
     
     ESP_LOGI(TAG, "Waiting for button press to reset");
