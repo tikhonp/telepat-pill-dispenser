@@ -79,7 +79,7 @@ static void main_flow(void) {
     esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
 
     if (cause == 7) {
-        ESP_LOGI(TAG, "Woke up by (reset button).");
+        ESP_LOGI(TAG, "Woke up by EXT1 (reset button).");
 
         gpio_config_t io_conf = {.pin_bit_mask = 1ULL
                                                  << CONFIG_RESET_BUTTON_PIN,
@@ -101,7 +101,6 @@ static void main_flow(void) {
                 de_start_blinking(103);
                 vTaskDelay(pdMS_TO_TICKS(1000));
                 de_stop_blinking();
-                cdc_deinit_led_signals();
                 break;
             }
             vTaskDelay(pdMS_TO_TICKS(10));
@@ -142,14 +141,14 @@ static void main_flow(void) {
         ESP_LOGE(TAG, "Failed to connect to wi-fi");
         err = sd_load_schedule_from_flash();
         if (err != ESP_OK) {
-            de_display_error(FLASH_LOAD_FAILED);
+            //de_display_error(FLASH_LOAD_FAILED);
         }
     } else if (mhr_fetch_schedule(&sd_save_schedule) != ESP_OK) {
         gm_set_medsenger_synced(false);
         ESP_LOGE(TAG, "Failed to fetch medsenger schedule");
         err = sd_load_schedule_from_flash();
         if (err != ESP_OK) {
-            de_display_error(FLASH_LOAD_FAILED);
+            //de_display_error(FLASH_LOAD_FAILED);
         }
     }
     if (gm_get_medsenger_synced())

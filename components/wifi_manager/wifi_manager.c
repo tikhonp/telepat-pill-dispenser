@@ -159,6 +159,8 @@ void wm_wifi_shutdown(void) {
 esp_err_t wm_wifi_connect(wifi_creds_t creds) {
     ESP_LOGI(TAG, "Start wifi_connect.");
     wm_wifi_start();
+    // start LED blinking indicator for Wi-Fi connection
+    de_start_blinking(104);
     wifi_config_t wifi_config = {
         .sta =
             {
