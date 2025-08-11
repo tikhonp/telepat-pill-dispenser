@@ -122,6 +122,19 @@ void de_stop_blinking(void) {
     }
 }
 
+// Функция деинициализации ленты
+void de_led_strip_deinit(void) {
+    if (led_strip != NULL) {
+        // Выключить все светодиоды перед удалением
+        for (int j = 0; j < LED_COUNT; ++j) {
+            led_strip_set_pixel(led_strip, j, 0, 0, 0);
+        }
+        led_strip_refresh(led_strip);
+        led_strip_del(led_strip);
+        led_strip = NULL;
+    }
+}
+
 #else
 
 #include "led_indicator.h"
@@ -176,6 +189,11 @@ void de_stop_blinking(void) {
         led_indicator_delete(led_handle);
         led_handle = NULL;
     }
+}
+
+// Функция деинициализации для альтернативного режима
+void de_led_strip_deinit(void) {
+    de_stop_blinking();
 }
 
 #endif
