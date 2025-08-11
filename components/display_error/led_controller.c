@@ -86,16 +86,6 @@ static const BlinkPattern waiting_pattern = {
     .step_count = sizeof(waiting_steps) / sizeof(BlinkStep),
 };
 
-static const BlinkStep connected_steps[] = {
-    {0, 232, 0, 1000, true},
-    {0, 0, 0, 1000, true},
-};
-static const BlinkPattern connected_pattern = {
-    .steps = connected_steps,
-    .step_count = sizeof(connected_steps) / sizeof(BlinkStep),
-};
-
-
 // Инициализация ленты (один раз)
 static void init_led_strip_once(void) {
     static bool initialized = false;
@@ -213,9 +203,6 @@ void de_start_blinking(int error_code) {
             break;
         case 105:
             pattern = &waiting_pattern;
-            break;
-        case 106:
-            pattern = &connected_pattern;
             break;
         default:
             pattern = &red_pattern;
