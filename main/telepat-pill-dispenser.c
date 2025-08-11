@@ -22,7 +22,6 @@
 #include "send_event_data.h"
 #include "sleep_controller.h"
 #include "battery_controller.h"
-#include "led_controller.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/time.h>
@@ -90,24 +89,15 @@ static void main_flow(void) {
         gpio_config(&io_conf);
         if (gpio_get_level(CONFIG_RESET_BUTTON_PIN) == 0) {
             ESP_LOGI(TAG, "Button pressed, waiting %d ms to confirm hold...",
-                 CONFIG_RESET_HOLD_TIME_MS);
-            de_start_blinking(101); 
+                     CONFIG_RESET_HOLD_TIME_MS);
+            vTaskDelay(pdMS_TO_TICKS(CONFIG_RESET_HOLD_TIME_MS));
 
-            int elapsed = 0;
-            while (elapsed < CONFIG_RESET_HOLD_TIME_MS) {
-            if (gpio_get_level(CONFIG_RESET_BUTTON_PIN) != 0) {
+            if (gpio_get_level(CONFIG_RESET_BUTTON_PIN) == 0) {
+                ESP_LOGI(TAG, "Button held for %d ms. Resetting NVS.",
+                         CONFIG_RESET_HOLD_TIME_MS);
+                nvs_clean_all();
+            } else {
                 ESP_LOGI(TAG, "Button was released before timeout.");
-                de_stop_blinking();
-                break;
-            }
-            vTaskDelay(pdMS_TO_TICKS(10));
-            elapsed += 10;
-            }
-
-            if (elapsed >= CONFIG_RESET_HOLD_TIME_MS && gpio_get_level(CONFIG_RESET_BUTTON_PIN) == 0) {
-            ESP_LOGI(TAG, "Button held for %d ms. Resetting NVS.",
-                 CONFIG_RESET_HOLD_TIME_MS);
-            nvs_clean_all();
             }
         } else {
             ESP_LOGI(TAG, "Button not pressed.");
