@@ -4,7 +4,6 @@
 #ifdef CONFIG_CDC_LEDS_WS2812B
 #include "cell_led_controller.h"
 #include <esp_log.h>
-#include <esp_err.h>
 #include <led_strip.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
@@ -17,13 +16,11 @@ static const char *TAG = "leds-ws2812-controller";
 #define LED_COUNT      CONFIG_SD_CELLS_COUNT
 #define LED_RES_HZ     (10 * 1000 * 1000) // 10MHz
 
-static led_strip_handle_t led_strip = NULL;
+static led_strip_handle_t led_strip;
 static SemaphoreHandle_t leds_mu;
 static bool leds_state[LED_COUNT] = {0};
-static bool leds_initialized = false;
 
 static void update_leds_strip(void) {
-    if (!leds_initialized || led_strip == NULL) return;
     for (uint8_t i = 0; i < LED_COUNT; i++) {
         if (leds_state[i]) {
             led_strip_set_pixel(led_strip, i, 255, 0, 0); // красный
@@ -53,22 +50,13 @@ void cdc_init_led_signals(void) {
     };
 
     ESP_LOGI(TAG, "Initializing WS2812B strip on GPIO %d with %d LEDs", LED_GPIO, LED_COUNT);
-    esp_err_t ret = led_strip_new_rmt_device(&strip_config, &rmt_config, &led_strip);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to create RMT TX channel (error %d). LED signals disabled", ret);
-        return;
-    }
-    leds_initialized = true;
+    ESP_ERROR_CHECK(led_strip_new_rmt_device(&strip_config, &rmt_config, &led_strip));
 
     memset(leds_state, 0, sizeof(leds_state));
     update_leds_strip();
 }
 
 void cdc_enable_signal(uint8_t indx) {
-    if (!leds_initialized || led_strip == NULL) {
-        ESP_LOGW(TAG, "LEDs not initialized, cannot enable signal");
-        return;
-    }
     if (indx >= LED_COUNT) {
         ESP_LOGW(TAG, "Invalid LED index: %d", indx);
         return;
@@ -81,10 +69,6 @@ void cdc_enable_signal(uint8_t indx) {
 }
 
 void cdc_disable_signal(uint8_t indx) {
-    if (!leds_initialized || led_strip == NULL) {
-        ESP_LOGW(TAG, "LEDs not initialized, cannot disable signal");
-        return;
-    }
     if (indx >= LED_COUNT) {
         ESP_LOGW(TAG, "Invalid LED index: %d", indx);
         return;
@@ -97,7 +81,6 @@ void cdc_disable_signal(uint8_t indx) {
 }
 
 void cdc_deinit_led_signals(void) {
-    if (!leds_initialized || led_strip == NULL) return;
     xSemaphoreTake(leds_mu, portMAX_DELAY);
     memset(leds_state, 0, sizeof(leds_state));
     update_leds_strip();

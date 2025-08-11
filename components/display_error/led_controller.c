@@ -99,9 +99,7 @@ static const BlinkPattern connected_pattern = {
 // Инициализация ленты (один раз)
 static void init_led_strip_once(void) {
     static bool initialized = false;
-    static bool init_attempted = false;
-    if (init_attempted) return;
-    init_attempted = true;
+    if (initialized) return;
 
     led_strip_config_t strip_config = {
         .strip_gpio_num = LED_GPIO_NUM,
@@ -116,11 +114,7 @@ static void init_led_strip_once(void) {
         .mem_block_symbols = 0,
     };
 
-    esp_err_t ret = led_strip_new_rmt_device(&strip_config, &rmt_config, &led_strip);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "WS2812B init failed (error %d), LED indicator disabled", ret);
-        return;
-    }
+    ESP_ERROR_CHECK(led_strip_new_rmt_device(&strip_config, &rmt_config, &led_strip));
     initialized = true;
 }
 

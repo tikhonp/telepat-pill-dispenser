@@ -110,21 +110,18 @@ static void main_flow(void) {
             if (elapsed >= CONFIG_RESET_HOLD_TIME_MS && gpio_get_level(CONFIG_RESET_BUTTON_PIN) == 0) {
             ESP_LOGI(TAG, "Button held for %d ms. Resetting NVS.",
                  CONFIG_RESET_HOLD_TIME_MS);
-                de_start_blinking(102);
-                nvs_clean_all();
+            de_start_blinking(102);
+            nvs_clean_all();
             }
         } else {
             ESP_LOGI(TAG, "Button not pressed.");
         }
-        de_stop_blinking();
     }
     ESP_LOGI(TAG, "wakeup cause: %d", cause);
 
     ESP_ERROR_CHECK(err);
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
-    // determine debug mode from wakeup cause, skip if NVS reset performed
-    bool extended_debug = (cause == 7);
 
     sd_init();
     gm_init();
@@ -136,29 +133,26 @@ static void main_flow(void) {
 
     // gm_set_wifi_creds(NULL);
 
-    if (wm_connect(extended_debug) != ESP_OK) {
+    if (wm_connect() != ESP_OK) {
         gm_set_medsenger_synced(false);
         ESP_LOGE(TAG, "Failed to connect to wi-fi");
         err = sd_load_schedule_from_flash();
         if (err != ESP_OK) {
-            //de_display_error(FLASH_LOAD_FAILED);
+            de_display_error(FLASH_LOAD_FAILED);
         }
     } else if (mhr_fetch_schedule(&sd_save_schedule) != ESP_OK) {
         gm_set_medsenger_synced(false);
         ESP_LOGE(TAG, "Failed to fetch medsenger schedule");
         err = sd_load_schedule_from_flash();
         if (err != ESP_OK) {
-            //de_display_error(FLASH_LOAD_FAILED);
+            de_display_error(FLASH_LOAD_FAILED);
         }
     }
     if (gm_get_medsenger_synced())
         send_saved_on_flash_events();
     sd_print_schedule();
 
-    // freeze 2s to display connection status when in debug mode
-    if (extended_debug) {
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
-    }
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
 
     err = cdc_monitor();
     if (err != ESP_OK)
