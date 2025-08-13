@@ -54,6 +54,14 @@ static const BlinkPattern green_pattern = {
     .step_count = sizeof(green_steps) / sizeof(BlinkStep),
 };
 
+static const BlinkStep ok_steps[] = {
+    {0, 255, 0, 2000},
+};
+static const BlinkPattern ok_pattern = {
+    .steps = ok_steps,
+    .step_count = sizeof(ok_steps) / sizeof(BlinkStep),
+};
+
 
 // Инициализация ленты (один раз)
 static void init_led_strip_once(void) {
@@ -96,6 +104,9 @@ void de_start_blinking(int error_code) {
             break;
         case 102:
             pattern = &green_pattern;
+            break;
+        case 103:
+            pattern = &ok_pattern;
             break;
         default:
             pattern = &red_pattern;

@@ -114,11 +114,10 @@ static void main_flow(void) {
                 nvs_clean_all();
             } else {
                 ESP_LOGI(TAG, "Button was released before timeout.");
-                de_start_blinking(102); // green
+                de_start_blinking(103); // green
             }
         } else {
             ESP_LOGI(TAG, "Button not pressed.");
-            de_start_blinking(102); // green
         }
     }
     if (debug_boot) {
