@@ -164,6 +164,7 @@ static void main_flow(void) {
         if (mhr_fetch_schedule(&sd_save_schedule) != ESP_OK) {
             gm_set_medsenger_synced(false);
             ESP_LOGE(TAG, "Failed to fetch medsenger schedule");
+            de_start_blinking(105);
             err = sd_load_schedule_from_flash();
             if (err != ESP_OK) {
                 ESP_LOGI(TAG, "Failed to load schedule from flash");

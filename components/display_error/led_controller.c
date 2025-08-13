@@ -71,6 +71,14 @@ static const BlinkPattern ok_pattern = {
     .step_count = sizeof(ok_steps) / sizeof(BlinkStep),
 };
 
+static const BlinkStep sync_failed_steps[] = {
+    {255, 64, 255, 500},
+    {0, 0, 0, 500},
+};
+static const BlinkPattern sync_failed_pattern = {
+    .steps = sync_failed_steps,
+    .step_count = sizeof(sync_failed_steps) / sizeof(BlinkStep),
+};
 
 // Инициализация ленты (один раз)
 static void init_led_strip_once(void) {
@@ -120,6 +128,10 @@ void de_start_blinking(int error_code) {
         case 104:
             pattern = &wifi_connected_pattern;
             break;
+        case 105:
+            pattern = &sync_failed_pattern;
+            break;
+        case 106: // Example error code for sync failed
         default:
             pattern = &red_pattern;
             break;
