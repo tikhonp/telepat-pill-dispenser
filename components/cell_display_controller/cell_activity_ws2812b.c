@@ -84,5 +84,3 @@ void cdc_deinit_led_signals(void) {
     
     ESP_LOGI(TAG, "WS2812B controller usage ended");
 }
-
-#endif
