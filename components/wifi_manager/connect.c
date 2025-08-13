@@ -7,6 +7,7 @@
 #include "time_sync_private.h"
 #include "wifi_creds.h"
 #include "wifi_manager_private.h"
+#include "led_controller.h"
 #include <string.h>
 #include <esp_log.h>
 
@@ -19,11 +20,14 @@ esp_err_t wm_connect() {
         ESP_LOGW(TAG, "wm_connect: no credentials found (err: %s)", esp_err_to_name(err));
     }
     if (err != ESP_OK) {
+        de_stop_blinking();
+        de_start_blinking(106);
         wifi_credentials_t obtained_creds = start_wifi_captive_portal(
             CONFIG_WM_CAPTIVE_PORTAL_NETWORK_NAME, "");
         // TODO: check creds.success
         strncpy(creds.ssid, obtained_creds.ssid, 33);
         strncpy(creds.psk, obtained_creds.psk, 33);
+        de_stop_blinking();
 
         ESP_ERROR_CHECK(gm_set_wifi_creds(&creds));
     }

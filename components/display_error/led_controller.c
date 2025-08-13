@@ -1,8 +1,6 @@
 #include "led_indicator.h"
 #include "led_strip_types.h"
 
-#ifdef CONFIG_CDC_LEDS_WS2812B
-
 #include "sdkconfig.h"
 #include "ws2812b_controller.h"
 #include <freertos/FreeRTOS.h>
@@ -18,6 +16,7 @@
 typedef struct {
     uint8_t r, g, b;
     uint32_t duration_ms;
+    bool smooth; // new field: true for smooth transition
 } BlinkStep;
 
 typedef struct {
@@ -28,8 +27,8 @@ typedef struct {
 static TaskHandle_t blink_task_handle = NULL;
 
 static const BlinkStep red_steps[] = {
-    {255, 0, 0, 300},
-    {0, 0, 0, 200},
+    {255, 0, 0, 300, false},
+    {0, 0, 0, 200, false},
 };
 static const BlinkPattern red_pattern = {
     .steps = red_steps,
@@ -37,8 +36,8 @@ static const BlinkPattern red_pattern = {
 };
 
 static const BlinkStep stay_holding_steps[] = {
-    {128, 0, 128, 150},
-    {0, 0, 0, 150},
+    {128, 0, 128, 150, false},
+    {0, 0, 0, 150, false},
 };
 static const BlinkPattern stay_holding_pattern = {
     .steps = stay_holding_steps,
@@ -46,8 +45,8 @@ static const BlinkPattern stay_holding_pattern = {
 };
 
 static const BlinkStep green_steps[] = {
-    {0, 255, 0, 150},
-    {0, 0, 0, 150},
+    {0, 255, 0, 150, false},
+    {0, 0, 0, 150, false},
 };
 static const BlinkPattern green_pattern = {
     .steps = green_steps,
@@ -55,8 +54,8 @@ static const BlinkPattern green_pattern = {
 };
 
 static const BlinkStep wifi_connected_steps[] = {
-    {0, 255, 0, 300},
-    {0, 0, 0, 300},
+    {0, 255, 0, 300, false},
+    {0, 0, 0, 300, false},
 };
 static const BlinkPattern wifi_connected_pattern = {
     .steps = wifi_connected_steps,
@@ -64,7 +63,7 @@ static const BlinkPattern wifi_connected_pattern = {
 };
 
 static const BlinkStep ok_steps[] = {
-    {0, 255, 0, 2000},
+    {0, 255, 0, 2000, false},
 };
 static const BlinkPattern ok_pattern = {
     .steps = ok_steps,
@@ -72,12 +71,21 @@ static const BlinkPattern ok_pattern = {
 };
 
 static const BlinkStep sync_failed_steps[] = {
-    {255, 64, 255, 500},
-    {0, 0, 0, 500},
+    {255, 64, 255, 500, false},
+    {0, 0, 0, 500, false},
 };
 static const BlinkPattern sync_failed_pattern = {
     .steps = sync_failed_steps,
     .step_count = sizeof(sync_failed_steps) / sizeof(BlinkStep),
+};
+
+static const BlinkStep wifi_steps[] = {
+    {50, 27, 26, 1000, true},   // smooth transition to brownish
+    {0, 0, 0, 1000, true},      // smooth transition to off
+};
+static const BlinkPattern wifi_pattern = {
+    .steps = wifi_steps,
+    .step_count = sizeof(wifi_steps) / sizeof(BlinkStep),
 };
 
 // Инициализация ленты (один раз)
@@ -92,14 +100,28 @@ static void init_led_strip_once(void) {
 // Задача мигания (паттерн повторяется по кругу)
 static void led_blink_pattern_task(void *param) {
     const BlinkPattern *pattern = (const BlinkPattern *)param;
+    size_t i = 0;
     while (true) {
-        for (size_t i = 0; i < pattern->step_count; ++i) {
-            const BlinkStep *step = &pattern->steps[i];
-            ws2812b_set_all_pixels(step->r, step->g, step->b);
+        const BlinkStep *curr = &pattern->steps[i];
+        const BlinkStep *next = &pattern->steps[(i + 1) % pattern->step_count];
+        if (curr->smooth) {
+            // Smooth transition from curr to next
+            uint32_t steps = curr->duration_ms / 20; // 20ms per frame
+            for (uint32_t s = 0; s < steps; ++s) {
+                float t = (float)s / (float)steps;
+                uint8_t r = curr->r + (int)((next->r - curr->r) * t);
+                uint8_t g = curr->g + (int)((next->g - curr->g) * t);
+                uint8_t b = curr->b + (int)((next->b - curr->b) * t);
+                ws2812b_set_all_pixels(r, g, b);
+                ws2812b_refresh();
+                vTaskDelay(pdMS_TO_TICKS(20));
+            }
+        } else {
+            ws2812b_set_all_pixels(curr->r, curr->g, curr->b);
             ws2812b_refresh();
-            vTaskDelay(pdMS_TO_TICKS(step->duration_ms));
+            vTaskDelay(pdMS_TO_TICKS(curr->duration_ms));
         }
-        // После завершения паттерна цикл повторяется (по кругу)
+        i = (i + 1) % pattern->step_count;
     }
 }
 
@@ -131,7 +153,9 @@ void de_start_blinking(int error_code) {
         case 105:
             pattern = &sync_failed_pattern;
             break;
-        case 106: // Example error code for sync failed
+        case 106:
+            pattern = &wifi_pattern;
+            break;
         default:
             pattern = &red_pattern;
             break;
@@ -155,66 +179,3 @@ void de_led_strip_deinit(void) {
     // Ленту не деинициализируем, так как она может использоваться другими компонентами
     // Очистка ленты уже произведена в de_stop_blinking
 }
-
-#else
-
-#include "led_indicator.h"
-#include "led_strip_types.h"
-
-#define LED_GPIO_NUM 10
-
-enum {
-    BLINK_TRIPLE = 0,
-    BLINK_MAX,
-};
-
-static const blink_step_t triple_blink[] = {
-    {LED_BLINK_HOLD, LED_STATE_OFF, 0},
-    {LED_BLINK_BREATHE, LED_STATE_50_PERCENT, 500},
-    {LED_BLINK_BREATHE, LED_STATE_OFF, 500},
-    {LED_BLINK_LOOP, 0, 0},
-};
-
-blink_step_t const *led_mode[] = {
-    [BLINK_TRIPLE] = triple_blink,
-    [BLINK_MAX] = NULL,
-};
-
-static led_indicator_handle_t led_handle = NULL;
-
-void de_start_blinking(int error_code) {
-    led_indicator_strips_config_t strips_config = {
-        .led_strip_cfg = {
-            .strip_gpio_num = LED_GPIO_NUM,
-            .max_leds = 1,
-            .led_pixel_format = LED_PIXEL_FORMAT_GRB,
-            .led_model = LED_MODEL_WS2812,
-        }};
-
-    const led_indicator_config_t config = {
-        .mode = LED_STRIPS_MODE,
-        .led_indicator_strips_config = &strips_config,
-        .blink_lists = led_mode,
-        .blink_list_num = BLINK_MAX,
-    };
-
-    led_handle = led_indicator_create(&config);
-    assert(led_handle != NULL);
-
-    led_indicator_start(led_handle, 0);
-}
-
-void de_stop_blinking(void) {
-    if (led_handle != NULL) {
-        led_indicator_stop(led_handle, 0);
-        led_indicator_delete(led_handle);
-        led_handle = NULL;
-    }
-}
-
-// Функция деинициализации для альтернативного режима
-void de_led_strip_deinit(void) {
-    de_stop_blinking();
-}
-
-#endif
