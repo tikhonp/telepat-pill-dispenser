@@ -54,6 +54,15 @@ static const BlinkPattern green_pattern = {
     .step_count = sizeof(green_steps) / sizeof(BlinkStep),
 };
 
+static const BlinkStep wifi_connected_steps[] = {
+    {0, 255, 0, 300},
+    {0, 0, 0, 300},
+};
+static const BlinkPattern wifi_connected_pattern = {
+    .steps = wifi_connected_steps,
+    .step_count = sizeof(wifi_connected_steps) / sizeof(BlinkStep),
+};
+
 static const BlinkStep ok_steps[] = {
     {0, 255, 0, 2000},
 };
@@ -107,6 +116,9 @@ void de_start_blinking(int error_code) {
             break;
         case 103:
             pattern = &ok_pattern;
+            break;
+        case 104:
+            pattern = &wifi_connected_pattern;
             break;
         default:
             pattern = &red_pattern;

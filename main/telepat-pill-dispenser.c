@@ -157,7 +157,7 @@ static void main_flow(void) {
         }
     } else {
         if (debug_boot) {
-            de_start_blinking(102);
+            de_start_blinking(104);
             vTaskDelay(pdMS_TO_TICKS(2000));
             de_stop_blinking();
         }
