@@ -1,13 +1,11 @@
-#include <stdint.h>
-#include "sdkconfig.h"
-
-#ifdef CONFIG_CDC_LEDS_WS2812B
 #include "cell_led_controller.h"
 #include "ws2812b_controller.h"
 #include <esp_log.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 #include <freertos/task.h>
+#include <led_strip.h>
+#include <stdint.h>
 #include <string.h>
 
 static const char *TAG = "leds-ws2812-controller";
