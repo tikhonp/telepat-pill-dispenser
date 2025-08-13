@@ -8,24 +8,41 @@
 #define STORAGE_WIFI_PSK_KEY "psk"
 
 esp_err_t gm_get_wifi_creds(wifi_creds_t *creds) {
-    size_t length;
     nvs_handle_t nvs_handle;
     esp_err_t err;
+
     err = nvs_open(STORAGE_WIFI_NAMESPACE, NVS_READONLY, &nvs_handle);
-    if (err != ESP_OK)
+    if (err != ESP_OK) {
         return err;
+    }
+
+    size_t length;
+
+    // Read SSID with proper buffer size
+    length = sizeof(creds->ssid);
     err = nvs_get_str(nvs_handle, STORAGE_WIFI_SSID_KEY, creds->ssid, &length);
-    if (err != ESP_OK)
+    if (err != ESP_OK) {
+        nvs_close(nvs_handle);
         return err;
-    if (length == 0)
+    }
+    if (length == 0) {
+        nvs_close(nvs_handle);
         return ESP_FAIL;
+    }
 
+    // Read PSK with proper buffer size
+    length = sizeof(creds->psk);
     err = nvs_get_str(nvs_handle, STORAGE_WIFI_PSK_KEY, creds->psk, &length);
-    if (err != ESP_OK)
+    if (err != ESP_OK) {
+        nvs_close(nvs_handle);
         return err;
-    if (length == 0)
+    }
+    if (length == 0) {
+        nvs_close(nvs_handle);
         return ESP_FAIL;
+    }
 
+    nvs_close(nvs_handle);
     return ESP_OK;
 }
 

@@ -11,6 +11,7 @@
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_sleep.h"
+#include "esp_system.h"
 #include "freertos/FreeRTOS.h" // IWYU pragma: export
 #include "freertos/task.h"
 #include "init_global_manager.h"
@@ -78,8 +79,12 @@ static void main_flow(void) {
     }
     esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
 
+    bool debug_boot = 0;
+
     if (cause == 7) {
-        ESP_LOGI(TAG, "Woke up by (reset button).");
+        ESP_LOGI(TAG, "Woke up by EXT1 (reset button).");
+        
+        debug_boot = true;
 
         gpio_config_t io_conf = {.pin_bit_mask = 1ULL
                                                  << CONFIG_RESET_BUTTON_PIN,
@@ -91,32 +96,34 @@ static void main_flow(void) {
         if (gpio_get_level(CONFIG_RESET_BUTTON_PIN) == 0) {
             ESP_LOGI(TAG, "Button pressed, waiting %d ms to confirm hold...",
                  CONFIG_RESET_HOLD_TIME_MS);
-            de_start_blinking(101); 
+            de_start_blinking(101);
 
             int elapsed = 0;
-            while (elapsed < CONFIG_RESET_HOLD_TIME_MS) {
-            if (gpio_get_level(CONFIG_RESET_BUTTON_PIN) != 0) {
-                ESP_LOGI(TAG, "Button was released before timeout.");
-                de_stop_blinking();
-                de_start_blinking(103);
-                vTaskDelay(pdMS_TO_TICKS(1000));
-                de_stop_blinking();
-                cdc_deinit_led_signals();
-                break;
-            }
-            vTaskDelay(pdMS_TO_TICKS(10));
-            elapsed += 10;
+            while (gpio_get_level(CONFIG_RESET_BUTTON_PIN) == 0 && elapsed < CONFIG_RESET_HOLD_TIME_MS) {
+                vTaskDelay(pdMS_TO_TICKS(10));
+                elapsed += 10;
             }
 
-            if (elapsed >= CONFIG_RESET_HOLD_TIME_MS && gpio_get_level(CONFIG_RESET_BUTTON_PIN) == 0) {
-            ESP_LOGI(TAG, "Button held for %d ms. Resetting NVS.",
-                 CONFIG_RESET_HOLD_TIME_MS);
-                de_start_blinking(102);
+            de_stop_blinking();
+
+            if (elapsed >= CONFIG_RESET_HOLD_TIME_MS) {
+                de_start_blinking(100);
+                vTaskDelay(pdMS_TO_TICKS(1000)); // Give some time for the button press to be registered
+                ESP_LOGI(TAG, "Button held for %d ms. Resetting NVS.",
+                    CONFIG_RESET_HOLD_TIME_MS);
                 nvs_clean_all();
+            } else {
+                ESP_LOGI(TAG, "Button was released before timeout.");
+                de_start_blinking(103); // green
             }
         } else {
             ESP_LOGI(TAG, "Button not pressed.");
         }
+    }
+    if (debug_boot) {
+        ESP_LOGI(TAG, "Debug boot enabled");
+        de_start_blinking(102);
+        vTaskDelay(pdMS_TO_TICKS(1000)); // Give some time for the button press to be registered
         de_stop_blinking();
     }
     ESP_LOGI(TAG, "wakeup cause: %d", cause);
@@ -124,8 +131,6 @@ static void main_flow(void) {
     ESP_ERROR_CHECK(err);
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
-    // determine debug mode from wakeup cause, skip if NVS reset performed
-    bool extended_debug = (cause == 7);
 
     sd_init();
     gm_init();
@@ -134,42 +139,53 @@ static void main_flow(void) {
     de_init();
     cdc_deinit_led_signals();
     cdc_init_led_signals();
-
-    // gm_set_wifi_creds(NULL);
-
-    if (wm_connect(extended_debug) != ESP_OK) {
+    
+    ESP_LOGI(TAG, "Connecting to Wi-Fi...");
+    if (wm_connect() != ESP_OK) {
+        if (debug_boot) {
+            ESP_LOGE(TAG, "Failed to connect to wi-fi");
+            de_start_blinking(100);
+            vTaskDelay(pdMS_TO_TICKS(2000));
+            de_stop_blinking();
+        }
         gm_set_medsenger_synced(false);
         ESP_LOGE(TAG, "Failed to connect to wi-fi");
         err = sd_load_schedule_from_flash();
         if (err != ESP_OK) {
+            ESP_LOGI(TAG, "Failed to load schedule from flash");
             de_display_error(FLASH_LOAD_FAILED);
         }
-    } else if (mhr_fetch_schedule(&sd_save_schedule) != ESP_OK) {
-        gm_set_medsenger_synced(false);
-        ESP_LOGE(TAG, "Failed to fetch medsenger schedule");
-        err = sd_load_schedule_from_flash();
-        if (err != ESP_OK) {
-            de_display_error(FLASH_LOAD_FAILED);
+    } else {
+        if (debug_boot) {
+            de_start_blinking(104);
+            vTaskDelay(pdMS_TO_TICKS(2000));
+            de_stop_blinking();
+        }
+        if (mhr_fetch_schedule(&sd_save_schedule) != ESP_OK) {
+            gm_set_medsenger_synced(false);
+            ESP_LOGE(TAG, "Failed to fetch medsenger schedule");
+            de_start_blinking(105);
+            err = sd_load_schedule_from_flash();
+            if (err != ESP_OK) {
+                ESP_LOGI(TAG, "Failed to load schedule from flash");
+                de_display_error(FLASH_LOAD_FAILED);
+            }
         }
     }
     if (gm_get_medsenger_synced())
         send_saved_on_flash_events();
     sd_print_schedule();
 
-    // freeze 2s to display connection status when in debug mode
-    if (extended_debug) {
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
-    }
+    vTaskDelay(pdMS_TO_TICKS(2000));
 
     err = cdc_monitor();
     if (err != ESP_OK)
         while (1)
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
+            vTaskDelay(pdMS_TO_TICKS(1000));
     else
         ESP_LOGI(TAG, "PREPARE SLEEP");
 
     ESP_ERROR_CHECK(wm_disconnect());
-    de_stop_blinking();
     cdc_deinit_led_signals();
     de_sleep();
 }

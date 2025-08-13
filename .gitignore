@@ -54,3 +54,5 @@ dependencies.lock
 
 CMakeCache.txt
 CMakeFiles
+
+.vscode/settings.json

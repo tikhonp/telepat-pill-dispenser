@@ -4,25 +4,20 @@
 #ifdef CONFIG_CDC_LEDS_WS2812B
 
 #include "sdkconfig.h"
-#include <led_strip.h>
+#include "ws2812b_controller.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <esp_log.h>
-#include <esp_err.h>
 #include <string.h>
-#include <stdbool.h>
-#include "cell_led_controller.h"
 
 #define LED_GPIO_NUM CONFIG_WS2812B_GPIO
 #define LED_COUNT CONFIG_SD_CELLS_COUNT
-#define LED_RES_HZ (10 * 1000 * 1000) // 10 MHz
 
 #define TAG "led-blinker"
 
 typedef struct {
     uint8_t r, g, b;
     uint32_t duration_ms;
-    bool smooth; // true - плавно, false - мгновенно
 } BlinkStep;
 
 typedef struct {
@@ -30,13 +25,11 @@ typedef struct {
     size_t step_count;
 } BlinkPattern;
 
-static led_strip_handle_t led_strip = NULL;
 static TaskHandle_t blink_task_handle = NULL;
-static int current_error_code = 0;
 
 static const BlinkStep red_steps[] = {
-    {255, 0, 0, 300, false},
-    {0, 0, 0, 200, false},
+    {255, 0, 0, 300},
+    {0, 0, 0, 200},
 };
 static const BlinkPattern red_pattern = {
     .steps = red_steps,
@@ -44,166 +37,79 @@ static const BlinkPattern red_pattern = {
 };
 
 static const BlinkStep stay_holding_steps[] = {
-    {128, 0, 128, 150, false},
-    {0, 0, 0, 150, false},
+    {128, 0, 128, 150},
+    {0, 0, 0, 150},
 };
 static const BlinkPattern stay_holding_pattern = {
     .steps = stay_holding_steps,
     .step_count = sizeof(stay_holding_steps) / sizeof(BlinkStep),
 };
 
-static const BlinkStep reset_steps[] = {
-    {255, 0, 0, 150, false},
-    {0, 0, 0, 150, false},
+static const BlinkStep green_steps[] = {
+    {0, 255, 0, 150},
+    {0, 0, 0, 150},
 };
-static const BlinkPattern reset_pattern = {
-    .steps = reset_steps,
-    .step_count = sizeof(reset_steps) / sizeof(BlinkStep),
-};
-
-static const BlinkStep OK_steps[] = {
-    {0, 255, 0, 550, true},
-    {0, 0, 0, 550, true},
-};
-static const BlinkPattern OK_pattern = {
-    .steps = OK_steps,
-    .step_count = sizeof(OK_steps) / sizeof(BlinkStep),
+static const BlinkPattern green_pattern = {
+    .steps = green_steps,
+    .step_count = sizeof(green_steps) / sizeof(BlinkStep),
 };
 
-static const BlinkStep loading_steps[] = {
-    {226, 232, 46, 350, false},
-    {0, 0, 0, 350, false},
+static const BlinkStep wifi_connected_steps[] = {
+    {0, 255, 0, 300},
+    {0, 0, 0, 300},
 };
-static const BlinkPattern loading_pattern = {
-    .steps = loading_steps,
-    .step_count = sizeof(loading_steps) / sizeof(BlinkStep),
-};
-
-static const BlinkStep waiting_steps[] = {
-    {46, 232, 232, 1000, true},
-    {0, 0, 0, 1000, true},
-};
-static const BlinkPattern waiting_pattern = {
-    .steps = waiting_steps,
-    .step_count = sizeof(waiting_steps) / sizeof(BlinkStep),
+static const BlinkPattern wifi_connected_pattern = {
+    .steps = wifi_connected_steps,
+    .step_count = sizeof(wifi_connected_steps) / sizeof(BlinkStep),
 };
 
-static const BlinkStep connected_steps[] = {
-    {0, 232, 0, 1000, true},
-    {0, 0, 0, 1000, true},
+static const BlinkStep ok_steps[] = {
+    {0, 255, 0, 2000},
 };
-static const BlinkPattern connected_pattern = {
-    .steps = connected_steps,
-    .step_count = sizeof(connected_steps) / sizeof(BlinkStep),
+static const BlinkPattern ok_pattern = {
+    .steps = ok_steps,
+    .step_count = sizeof(ok_steps) / sizeof(BlinkStep),
 };
 
+static const BlinkStep sync_failed_steps[] = {
+    {255, 64, 255, 500},
+    {0, 0, 0, 500},
+};
+static const BlinkPattern sync_failed_pattern = {
+    .steps = sync_failed_steps,
+    .step_count = sizeof(sync_failed_steps) / sizeof(BlinkStep),
+};
 
 // Инициализация ленты (один раз)
-// Initialize the LED strip on first successful attempt
 static void init_led_strip_once(void) {
-    static bool initialized = false;
-    if (initialized) return;
-
-    led_strip_config_t strip_config = {
-        .strip_gpio_num = LED_GPIO_NUM,
-        .max_leds = LED_COUNT,
-        .led_pixel_format = LED_PIXEL_FORMAT_GRB,
-        .led_model = LED_MODEL_WS2812,
-        .flags.invert_out = false,
-    };
-    led_strip_rmt_config_t rmt_config = {
-        .clk_src = RMT_CLK_SRC_DEFAULT,
-        .resolution_hz = LED_RES_HZ,
-        .mem_block_symbols = 0,
-    };
-
-    esp_err_t ret = led_strip_new_rmt_device(&strip_config, &rmt_config, &led_strip);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "WS2812B init failed (error %d), will retry on next blink", ret);
-        return;
-    }
-    initialized = true;
-}
-
-// Плавное изменение цвета
-static void led_smooth_transition(uint8_t r0, uint8_t g0, uint8_t b0,
-                                  uint8_t r1, uint8_t g1, uint8_t b1,
-                                  uint32_t duration_ms) {
-    const uint32_t steps = duration_ms / 20;
-    if (steps == 0) {
-        for (int j = 0; j < LED_COUNT; ++j) {
-            led_strip_set_pixel(led_strip, j, g1, r1, b1);
+    if (!ws2812b_is_initialized()) {
+        if (!ws2812b_init(LED_GPIO_NUM, LED_COUNT)) {
+            ESP_LOGE(TAG, "Failed to initialize WS2812B strip");
         }
-        led_strip_refresh(led_strip);
-        vTaskDelay(pdMS_TO_TICKS(duration_ms));
-        return;
-    }
-
-    int r_diff = (int)r1 - (int)r0;
-    int g_diff = (int)g1 - (int)g0;
-    int b_diff = (int)b1 - (int)b0;
-
-    for (uint32_t s = 1; s <= steps; ++s) {
-        uint8_t r = (uint8_t)((int)r0 + (r_diff * (int)s) / (int)steps);
-        uint8_t g = (uint8_t)((int)g0 + (g_diff * (int)s) / (int)steps);
-        uint8_t b = (uint8_t)((int)b0 + (b_diff * (int)s) / (int)steps);
-
-        for (int j = 0; j < LED_COUNT; ++j) {
-            led_strip_set_pixel(led_strip, j, g, r, b);
-        }
-        led_strip_refresh(led_strip);
-        vTaskDelay(pdMS_TO_TICKS(duration_ms / steps));
     }
 }
-
 
 // Задача мигания (паттерн повторяется по кругу)
 static void led_blink_pattern_task(void *param) {
-    ESP_LOGI(TAG, "Blink task started with pattern");
     const BlinkPattern *pattern = (const BlinkPattern *)param;
-    uint8_t prev_r = 0, prev_g = 0, prev_b = 0;
-    bool first = true;
-    while (1) {
+    while (true) {
         for (size_t i = 0; i < pattern->step_count; ++i) {
             const BlinkStep *step = &pattern->steps[i];
-            if (step->smooth && !first) {
-                led_smooth_transition(prev_r, prev_g, prev_b, step->r, step->g, step->b, step->duration_ms);
-            } else {
-                for (int j = 0; j < LED_COUNT; ++j) {
-                    led_strip_set_pixel(led_strip, j, step->r, step->g, step->b);
-                }
-                led_strip_refresh(led_strip);
-                vTaskDelay(pdMS_TO_TICKS(step->duration_ms));
-            }
-            prev_r = step->r;
-            prev_g = step->g;
-            prev_b = step->b;
-            ESP_LOGI(TAG, "LEDs set to R:%d G:%d B:%d for %lu ms", step->r, step->g, step->b, (unsigned long)step->duration_ms);
-            first = false;
+            ws2812b_set_all_pixels(step->r, step->g, step->b);
+            ws2812b_refresh();
+            vTaskDelay(pdMS_TO_TICKS(step->duration_ms));
         }
+        // После завершения паттерна цикл повторяется (по кругу)
     }
 }
 
 // Старт мигания с выбором паттерна по error_code
 void de_start_blinking(int error_code) {
-    // Free the cell display controller's RMT driver to allow our own init
-    cdc_deinit_led_signals();
     init_led_strip_once();
 
-    // Если уже запущена задача и error_code совпадает, ничего не делаем
     if (blink_task_handle != NULL) {
-        if (current_error_code == error_code) {
-            ESP_LOGW(TAG, "Blink task already running with same error_code");
-            return;
-        }
-        // Остановить текущую задачу, если error_code другой
-        vTaskDelete(blink_task_handle);
-        blink_task_handle = NULL;
-        // Выключить все светодиоды
-        for (int j = 0; j < LED_COUNT; ++j) {
-            led_strip_set_pixel(led_strip, j, 0, 0, 0);
-        }
-        led_strip_refresh(led_strip);
+        ESP_LOGW(TAG, "Blink task already running");
+        return;
     }
 
     ESP_LOGI(TAG, "Starting blink task");
@@ -214,26 +120,23 @@ void de_start_blinking(int error_code) {
             pattern = &stay_holding_pattern;
             break;
         case 102:
-            pattern = &reset_pattern;
+            pattern = &green_pattern;
             break;
         case 103:
-            pattern = &OK_pattern;
+            pattern = &ok_pattern;
             break;
         case 104:
-            pattern = &loading_pattern;
+            pattern = &wifi_connected_pattern;
             break;
         case 105:
-            pattern = &waiting_pattern;
+            pattern = &sync_failed_pattern;
             break;
-        case 106:
-            pattern = &connected_pattern;
-            break;
+        case 106: // Example error code for sync failed
         default:
             pattern = &red_pattern;
             break;
     }
 
-    current_error_code = error_code;
     xTaskCreate(led_blink_pattern_task, "led_blink_pattern", 2048, (void *)pattern, 5, &blink_task_handle);
 }
 
@@ -241,13 +144,16 @@ void de_stop_blinking(void) {
     if (blink_task_handle != NULL) {
         vTaskDelete(blink_task_handle);
         blink_task_handle = NULL;
-        current_error_code = 0;
         // Выключить все светодиоды
-        for (int j = 0; j < LED_COUNT; ++j) {
-            led_strip_set_pixel(led_strip, j, 0, 0, 0);
-        }
-        led_strip_refresh(led_strip);
+        ws2812b_clear_all();
     }
+}
+
+// Функция деинициализации ленты
+void de_led_strip_deinit(void) {
+    de_stop_blinking();
+    // Ленту не деинициализируем, так как она может использоваться другими компонентами
+    // Очистка ленты уже произведена в de_stop_blinking
 }
 
 #else
@@ -304,6 +210,11 @@ void de_stop_blinking(void) {
         led_indicator_delete(led_handle);
         led_handle = NULL;
     }
+}
+
+// Функция деинициализации для альтернативного режима
+void de_led_strip_deinit(void) {
+    de_stop_blinking();
 }
 
 #endif

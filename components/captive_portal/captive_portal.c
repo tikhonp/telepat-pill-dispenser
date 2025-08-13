@@ -11,7 +11,6 @@
 #include "freertos/task.h"
 #include "lwip/ip4_addr.h"
 #include "lwip/sockets.h"
-#include "led_controller.h"
 #include <string.h>
 
 static const char *TAG = "WIFI-CONFIGURATOR";
@@ -327,7 +326,6 @@ static void start_captive_portal_httpd(httpd_handle_t *server) {
 // --- Главная функция captive-портала: блокирует до успеха или рестарта ---
 wifi_credentials_t start_wifi_captive_portal(const char *ap_ssid,
                                              const char *ap_password) {
-    de_start_blinking(104); // Начать мигание красным
     memset(&s_user_data, 0, sizeof(s_user_data));
     s_event_group = xEventGroupCreate();
 
@@ -372,9 +370,6 @@ wifi_credentials_t start_wifi_captive_portal(const char *ap_ssid,
     // HTTP сервер
     httpd_handle_t server = NULL;
     start_captive_portal_httpd(&server);
-
-    de_stop_blinking();
-    de_start_blinking(105); // Начать мигание жёлтым
 
     // Цикл — пока не получим валидные данные и не подключимся к STA
     while (1) {

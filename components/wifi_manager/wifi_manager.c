@@ -5,7 +5,6 @@
 #include "freertos/idf_additions.h"
 #include "wifi_manager_private.h"
 #include <string.h>
-#include "led_controller.h"
 
 static const char *TAG = "wifi-manager";
 static esp_netif_t *wm_s_sta_netif = NULL;
@@ -27,9 +26,8 @@ static void wm_handler_on_wifi_disconnect(void *arg,
                                           int32_t event_id, void *event_data) {
     wm_s_retry_num++;
     if (wm_s_retry_num > CONFIG_WM_WIFI_CONN_MAX_RETRY) {
-        ESP_LOGI(TAG, "WiFi Connect failed %d times, stop reconnect.", wm_s_retry_num);
-        // stop LED blinking on failure
-        de_stop_blinking();
+        ESP_LOGI(TAG, "WiFi Connect failed %d times, stop reconnect.",
+                 wm_s_retry_num);
         /* let wifi_sta_do_connect() return */
         if (wm_s_semph_get_ip_addrs) {
             xSemaphoreGive(wm_s_semph_get_ip_addrs);
@@ -60,8 +58,6 @@ static void wm_handler_on_wifi_connect(void *esp_netif,
 static void wm_handler_on_sta_got_ip(void *arg, esp_event_base_t event_base,
                                      int32_t event_id, void *event_data) {
     wm_s_retry_num = 0;
-    // stop LED blinking on successful connection
-    de_stop_blinking();
     ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
     if (!wm_is_our_netif(WM_NETIF_DESC_STA, event->esp_netif)) {
         return;
