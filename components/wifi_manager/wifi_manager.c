@@ -137,13 +137,12 @@ esp_err_t wm_wifi_sta_do_connect(wifi_config_t wifi_config, bool wait) {
 }
 
 esp_err_t wm_wifi_sta_do_disconnect(void) {
-    ESP_ERROR_CHECK(
-        esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED,
-                                     &wm_handler_on_wifi_disconnect));
-    ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP,
-                                                 &wm_handler_on_sta_got_ip));
-    ESP_ERROR_CHECK(esp_event_handler_unregister(
-        WIFI_EVENT, WIFI_EVENT_STA_CONNECTED, &wm_handler_on_wifi_connect));
+    esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED,
+                                 &wm_handler_on_wifi_disconnect);
+    esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP,
+                                                 &wm_handler_on_sta_got_ip);
+    esp_event_handler_unregister(
+        WIFI_EVENT, WIFI_EVENT_STA_CONNECTED, &wm_handler_on_wifi_connect);
     return esp_wifi_disconnect();
 }
 
@@ -164,7 +163,8 @@ esp_err_t wm_wifi_connect(wifi_creds_t creds) {
                 .threshold.authmode = WM_WIFI_SCAN_AUTH_MODE_THRESHOLD,
             },
     };
-    strncpy((char *)wifi_config.sta.ssid, creds.ssid, sizeof(wifi_config.sta.ssid));
+    strncpy((char *)wifi_config.sta.ssid, creds.ssid,
+            sizeof(wifi_config.sta.ssid));
     strncpy((char *)wifi_config.sta.password, creds.psk,
             sizeof(wifi_config.sta.password));
     return wm_wifi_sta_do_connect(wifi_config, true);
