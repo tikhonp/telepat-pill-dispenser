@@ -5,6 +5,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 #include <string.h>
+#include "driver/gpio.h"  // Add GPIO driver
 
 static const char *TAG = "ws2812b-controller";
 #define LED_RES_HZ (10 * 1000 * 1000) // 10 MHz
@@ -19,6 +20,18 @@ bool ws2812b_init(uint8_t gpio_num, uint16_t leds_count) {
         ESP_LOGW(TAG, "WS2812B strip already initialized");
         return true; // Считаем это успешной инициализацией
     }
+
+    // Включаем GPIO pin 4
+    gpio_config_t io_conf = {
+        .pin_bit_mask = (1ULL << 4),
+        .mode = GPIO_MODE_OUTPUT,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE
+    };
+    gpio_config(&io_conf);
+    gpio_set_level(4, 1);
+    ESP_LOGI(TAG, "Enabled GPIO pin 4");
 
     // Создаем мьютекс для безопасного доступа к ленте из разных задач
     if (led_mutex == NULL) {
@@ -145,6 +158,10 @@ bool ws2812b_deinit(void) {
         vSemaphoreDelete(led_mutex);
         led_mutex = NULL;
     }
+
+    // Выключаем GPIO pin 4
+    gpio_set_level(4, 0);
+    ESP_LOGI(TAG, "Disabled GPIO pin 4");
 
     ESP_LOGI(TAG, "WS2812B deinit %s", result ? "successful" : "failed");
     return result;
