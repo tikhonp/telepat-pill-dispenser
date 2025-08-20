@@ -7,11 +7,13 @@
 #include <led_strip.h>
 #include <stdint.h>
 #include <string.h>
+#include <driver/gpio.h>
 
 static const char *TAG = "leds-ws2812-controller";
 
 #define LED_GPIO       CONFIG_WS2812B_GPIO
 #define LED_COUNT      CONFIG_SD_CELLS_COUNT
+#define POWER_GPIO     4  // Пин, который надо включать при инициализации и выключать при деинициализации
 
 static SemaphoreHandle_t leds_mu;
 static bool leds_state[CONFIG_SD_CELLS_COUNT] = {0};
@@ -30,6 +32,12 @@ static void update_leds_strip(void) {
 void cdc_init_led_signals(void) {
     leds_mu = xSemaphoreCreateMutex();
     assert(leds_mu != NULL);
+
+    // Включаем питание на POWER_GPIO
+    gpio_reset_pin(POWER_GPIO);
+    gpio_set_direction(POWER_GPIO, GPIO_MODE_OUTPUT);
+    gpio_set_level(POWER_GPIO, 1);
+    ESP_LOGI(TAG, "POWER GPIO %d set HIGH", POWER_GPIO);
 
     if (!ws2812b_is_initialized()) {
         if (!ws2812b_init(LED_GPIO, LED_COUNT)) {
@@ -81,6 +89,9 @@ void cdc_deinit_led_signals(void) {
     // Удаляем только мьютекс, лента не деинициализируется, так как может использоваться другими компонентами
     vSemaphoreDelete(leds_mu);
     leds_mu = NULL;
+    // Выключаем питание на POWER_GPIO
+    gpio_set_level(POWER_GPIO, 0);
+    ESP_LOGI(TAG, "POWER GPIO %d set LOW", POWER_GPIO);
     
     ESP_LOGI(TAG, "WS2812B controller usage ended");
 }
