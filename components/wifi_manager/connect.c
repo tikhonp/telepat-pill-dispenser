@@ -23,7 +23,7 @@ esp_err_t wm_connect() {
         de_stop_blinking();
         de_start_blinking(106);
         wifi_credentials_t obtained_creds = start_wifi_captive_portal(
-            CONFIG_WM_CAPTIVE_PORTAL_NETWORK_NAME, "");
+            CONFIG_WM_CAPTIVE_PORTAL_NETWORK_NAME "-" CONFIG_SERIAL_NUMBER, "");
         // TODO: check creds.success
         strncpy(creds.ssid, obtained_creds.ssid, 33);
         strncpy(creds.psk, obtained_creds.psk, 33);
