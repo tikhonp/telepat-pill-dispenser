@@ -1,0 +1,38 @@
+@startuml
+start
+:Source material
+ - PCB (rev 1.2)
+ - SMDs parts
+ - 3D printed case
+ - Middle plate
+ - LED strip for middle plate (WS2812B)
+ - Battery 
+ - Pill-dispenser top;
+group "PCB assembly"
+    :Clean PCB with isopropyl alcohol;
+    :Solder paste application with steel stencil;
+    :Pick and place SMD components;
+    :Bake PCB in reflow stove;
+    :Solder THT components by hand;
+    :Solder battery to PCB;
+end group
+group "Middle plate assembly"
+    :Cut LED strip to length (2X2 or 4X7);
+    :Solder wires to LED strip;
+    :Solder power switch transistor to wires;
+    :Glue LED strip to middle plate;
+    :Solder buttons to wires (x2);
+    :Solder middler plate and button wires to PCB;
+end group
+group "Final assembly"
+    :Insert PCB into bottom case;
+    :Glue PCB and battery to bottom case;
+    :Glue buttons to bottom case (4X7) or middle plate (2X2);
+    :Insert middle plate into bottom case;
+    :In case of 4X7, prepare pill-dispenser top by gluing cells dividers;
+    :Insert pill-dispenser top into bottom case;
+end group
+:flash the firmaware;
+stop
+@enduml
+
