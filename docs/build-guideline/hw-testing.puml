@@ -1,0 +1,22 @@
+@startuml
+start
+group "Check type-c port"
+    :Connect type c checking wire;
+    :Check if power (red) and ground (black) are not shorted (not rings);
+    :Check if power (red) wire connected to power circuit
+    <img:./power-line-checkpoint-PCB-rev1.2.png{scale=0.3}>;
+    :Check if ground (black) wire connected to ground circuit
+    <img:./ground-line-checkpoint-PCB-rev1.2.png{scale=0.3}>;
+end group
+group "Check battery charging"
+    :Connect battery;
+    :Connect charging cable usb-a to type-c port, check if red led lights up;
+    :Check if there is 5.1V on controller power line
+    <img:./controller-power-checkpoint-PCB-rev1.2.png{scale=0.3}>;
+    :Disconnect charging cable, check if red led turns off;
+    :Check if there is still 5.1V on controller power line
+    <img:./controller-power-checkpoint-PCB-rev1.2.png{scale=0.3}>;
+    :Connect type-c to type-c charging cable to type-c port, check if red led lights up;
+end group
+end
+@enduml
