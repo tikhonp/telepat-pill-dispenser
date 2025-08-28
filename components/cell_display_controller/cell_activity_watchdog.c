@@ -2,6 +2,7 @@
 #include "button_controller.h"
 #include "buzzer.h"
 #include "cell_led_controller.h"
+#include "cells_count.h"
 #include "display_error.h"
 #include "esp_err.h"
 #include "esp_log.h"
@@ -52,9 +53,9 @@ esp_err_t cdc_monitor(void) {
 
     uint8_t i;
     esp_err_t err;
-    bool active_cells[CONFIG_SD_CELLS_COUNT] = {0};
-    sd_cell_schedule_t schedule[CONFIG_SD_CELLS_COUNT];
-    for (i = 0; i < CONFIG_SD_CELLS_COUNT; ++i)
+    bool active_cells[CELLS_COUNT] = {0};
+    sd_cell_schedule_t schedule[CELLS_COUNT];
+    for (i = 0; i < CELLS_COUNT; ++i)
         schedule[i] = sd_get_schedule_by_cell_indx(i);
 
     uint32_t medsenger_refresh_rate;
@@ -68,7 +69,7 @@ esp_err_t cdc_monitor(void) {
         gettimeofday(&tv, NULL);
 
         bool play_signal = false;
-        for (i = 0; i < CONFIG_SD_CELLS_COUNT; ++i) {
+        for (i = 0; i < CELLS_COUNT; ++i) {
 
             /*ESP_LOGI(TAG, "checking cell is active: [%d], st: [%"PRIu32"], et: [%"PRIu32"], cur: [%lld]", */
             /*         active_cells[i], schedule[i].start_timestamp, schedule[i].end_timestamp, tv.tv_sec);*/
@@ -102,7 +103,7 @@ esp_err_t cdc_monitor(void) {
 
         // check if none of cells is active
         bool is_true_in_array = false;
-        for (i = 0; i < CONFIG_SD_CELLS_COUNT; i++)
+        for (i = 0; i < CELLS_COUNT; i++)
             is_true_in_array = is_true_in_array ? true : active_cells[i];
         if (!is_true_in_array) {
             ESP_LOGI(TAG, "No tasks found. Exiting...");
@@ -120,7 +121,7 @@ esp_err_t cdc_monitor(void) {
             // button pressed
             ESP_LOGI(TAG, "Button pressed");
 
-            for (i = 0; i < CONFIG_SD_CELLS_COUNT; ++i)
+            for (i = 0; i < CELLS_COUNT; ++i)
                 if (active_cells[i]) {
                     cdc_disable_signal(i);
                     err = mhr_submit_succes_cell((uint32_t)tv.tv_sec, i);

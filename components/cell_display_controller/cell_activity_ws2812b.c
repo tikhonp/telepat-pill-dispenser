@@ -1,5 +1,7 @@
 #include "cell_led_controller.h"
+#include "cells_count.h"
 #include "ws2812b_controller.h"
+#include <driver/gpio.h>
 #include <esp_log.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
@@ -7,19 +9,17 @@
 #include <led_strip.h>
 #include <stdint.h>
 #include <string.h>
-#include <driver/gpio.h>
 
 static const char *TAG = "leds-ws2812-controller";
 
-#define LED_GPIO       CONFIG_WS2812B_GPIO
-#define LED_COUNT      CONFIG_SD_CELLS_COUNT
-#define POWER_GPIO     4  // Пин, который надо включать при инициализации и выключать при деинициализации
+#define LED_GPIO CONFIG_WS2812B_CONTROL_GPIO
+#define POWER_GPIO CONFIG_WS2812B_ENABLE_GPIO
 
 static SemaphoreHandle_t leds_mu;
-static bool leds_state[CONFIG_SD_CELLS_COUNT] = {0};
+static bool leds_state[CELLS_COUNT] = {0};
 
 static void update_leds_strip(void) {
-    for (uint8_t i = 0; i < LED_COUNT; i++) {
+    for (uint8_t i = 0; i < CELLS_COUNT; i++) {
         if (leds_state[i]) {
             ws2812b_set_pixel(i, 255, 0, 0); // красный
         } else {
@@ -40,20 +40,21 @@ void cdc_init_led_signals(void) {
     ESP_LOGI(TAG, "POWER GPIO %d set HIGH", POWER_GPIO);
 
     if (!ws2812b_is_initialized()) {
-        if (!ws2812b_init(LED_GPIO, LED_COUNT)) {
+        if (!ws2812b_init(LED_GPIO, CELLS_COUNT)) {
             ESP_LOGE(TAG, "Failed to initialize WS2812B strip");
             return;
         }
     }
 
-    ESP_LOGI(TAG, "Using WS2812B strip on GPIO %d with %d LEDs", LED_GPIO, LED_COUNT);
-    
+    ESP_LOGI(TAG, "Using WS2812B strip on GPIO %d with %d LEDs", LED_GPIO,
+             CELLS_COUNT);
+
     memset(leds_state, 0, sizeof(leds_state));
     update_leds_strip();
 }
 
 void cdc_enable_signal(uint8_t indx) {
-    if (indx >= LED_COUNT) {
+    if (indx >= CELLS_COUNT) {
         ESP_LOGW(TAG, "Invalid LED index: %d", indx);
         return;
     }
@@ -65,7 +66,7 @@ void cdc_enable_signal(uint8_t indx) {
 }
 
 void cdc_disable_signal(uint8_t indx) {
-    if (indx >= LED_COUNT) {
+    if (indx >= CELLS_COUNT) {
         ESP_LOGW(TAG, "Invalid LED index: %d", indx);
         return;
     }
@@ -85,13 +86,13 @@ void cdc_deinit_led_signals(void) {
     memset(leds_state, 0, sizeof(leds_state));
     update_leds_strip();
     xSemaphoreGive(leds_mu);
-    
+
     // Удаляем только мьютекс, лента не деинициализируется, так как может использоваться другими компонентами
     vSemaphoreDelete(leds_mu);
     leds_mu = NULL;
     // Выключаем питание на POWER_GPIO
     gpio_set_level(POWER_GPIO, 0);
     ESP_LOGI(TAG, "POWER GPIO %d set LOW", POWER_GPIO);
-    
+
     ESP_LOGI(TAG, "WS2812B controller usage ended");
 }

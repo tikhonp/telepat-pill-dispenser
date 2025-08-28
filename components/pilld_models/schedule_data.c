@@ -1,10 +1,10 @@
 #include "schedule_data.h"
+#include "cells_count.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "freertos/idf_additions.h"
 #include "nvs.h"
 #include "schedule_data_private.h"
-#include "sdkconfig.h"
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -14,7 +14,7 @@
 
 const char *TAG = "cell-schedule-data";
 
-static sd_cell_schedule_t sd_schedule_data[CONFIG_SD_CELLS_COUNT];
+static sd_cell_schedule_t sd_schedule_data[CELLS_COUNT];
 static SemaphoreHandle_t sd_schedule_data_mutex;
 
 void sd_init(void) {
@@ -23,7 +23,7 @@ void sd_init(void) {
 }
 
 sd_cell_schedule_t sd_get_schedule_by_cell_indx(int n) {
-    assert(n < CONFIG_SD_CELLS_COUNT);
+    assert(n < CELLS_COUNT);
     sd_cell_schedule_t buf;
     assert(xSemaphoreTake(sd_schedule_data_mutex, portMAX_DELAY) == pdTRUE);
     buf = sd_schedule_data[n];
@@ -32,7 +32,7 @@ sd_cell_schedule_t sd_get_schedule_by_cell_indx(int n) {
 }
 
 void sd_print_schedule(void) {
-    for (int i = 0; i < CONFIG_SD_CELLS_COUNT; i++) {
+    for (int i = 0; i < CELLS_COUNT; i++) {
         sd_cell_schedule_t cs = sd_get_schedule_by_cell_indx(i);
         ESP_LOGI(TAG, "SC[%" PRIu32 ", %" PRIu32 ", %" PRIu8 "]",
                  cs.start_timestamp, cs.end_timestamp, cs.meta);
@@ -40,7 +40,7 @@ void sd_print_schedule(void) {
 }
 
 esp_err_t sd_save_schedule(char *buf, unsigned int buf_length) {
-    if ((buf_length / sizeof(sd_cell_schedule_t)) != CONFIG_SD_CELLS_COUNT)
+    if ((buf_length / sizeof(sd_cell_schedule_t)) != CELLS_COUNT)
         return ESP_FAIL;
     esp_err_t err = sd_save_schedule_to_memory(buf, buf_length);
     if (err != ESP_OK) {
