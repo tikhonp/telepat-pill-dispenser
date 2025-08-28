@@ -11,6 +11,7 @@
 #include "freertos/task.h"
 #include "lwip/ip4_addr.h"
 #include "lwip/sockets.h"
+#include "sdkconfig.h"
 #include <string.h>
 
 static const char *TAG = "WIFI-CONFIGURATOR";
@@ -163,13 +164,33 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
     }
 }
 
+#if CONFIG_WM_WIFI_AUTH_OPEN
+#define WM_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_OPEN
+#elif CONFIG_WM_WIFI_AUTH_WEP
+#define WM_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WEP
+#elif CONFIG_ESP_WIFI_AUTH_WPA_PSK
+#define WM_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA_PSK
+#elif CONFIG_WM_WIFI_AUTH_WPA2_PSK
+#define WM_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA2_PSK
+#elif CONFIG_WM_WIFI_AUTH_WPA_WPA2_PSK
+#define WM_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA_WPA2_PSK
+#elif CONFIG_WM_WIFI_AUTH_WPA2_ENTERPRISE
+#define WM_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA2_ENTERPRISE
+#elif CONFIG_WM_WIFI_AUTH_WPA3_PSK
+#define WM_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA3_PSK
+#elif CONFIG_WM_WIFI_AUTH_WPA2_WPA3_PSK
+#define WM_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA2_WPA3_PSK
+#elif CONFIG_WM_WIFI_AUTH_WAPI_PSK
+#define WM_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WAPI_PSK
+#endif
+
 // --- Проверка подключения STA ---
 static bool check_sta_connect(const char *ssid, const char *password) {
     wifi_config_t wifi_config = {0};
     strncpy((char *)wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid));
     strncpy((char *)wifi_config.sta.password, password,
             sizeof(wifi_config.sta.password));
-    wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+    wifi_config.sta.threshold.authmode = WM_WIFI_SCAN_AUTH_MODE_THRESHOLD,
     wifi_config.sta.pmf_cfg.required = false;
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));

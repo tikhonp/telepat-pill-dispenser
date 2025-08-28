@@ -21,6 +21,133 @@ bool wm_is_our_netif(const char *prefix, esp_netif_t *netif) {
     return strncmp(prefix, esp_netif_get_desc(netif), strlen(prefix) - 1) == 0;
 }
 
+const char *wifi_reason_to_name(wifi_err_reason_t reason) {
+    switch (reason) {
+    case WIFI_REASON_UNSPECIFIED:
+        return "1, Unspecified reason";
+    case WIFI_REASON_AUTH_EXPIRE:
+        return "2, Authentication expired";
+    case WIFI_REASON_AUTH_LEAVE:
+        return "3, Deauthentication due to leaving";
+    case WIFI_REASON_DISASSOC_DUE_TO_INACTIVITY:
+        return "4, Disassociated due to inactivity";
+    case WIFI_REASON_ASSOC_TOOMANY:
+        return "5, Too many associated stations";
+    case WIFI_REASON_CLASS2_FRAME_FROM_NONAUTH_STA:
+        return "6, Class 2 frame received from nonauthenticated STA";
+    case WIFI_REASON_CLASS3_FRAME_FROM_NONASSOC_STA:
+        return "7, Class 3 frame received from nonassociated STA";
+    case WIFI_REASON_ASSOC_LEAVE:
+        return "8, Deassociated due to leaving";
+    case WIFI_REASON_ASSOC_NOT_AUTHED:
+        return "9, Association but not authenticated";
+    case WIFI_REASON_DISASSOC_PWRCAP_BAD:
+        return "10, Disassociated due to poor power capability";
+    case WIFI_REASON_DISASSOC_SUPCHAN_BAD:
+        return "11, Disassociated due to unsupported channel";
+    case WIFI_REASON_BSS_TRANSITION_DISASSOC:
+        return "12, Disassociated due to BSS transition";
+    case WIFI_REASON_IE_INVALID:
+        return "13, Invalid Information Element (IE";
+    case WIFI_REASON_MIC_FAILURE:
+        return "14, MIC failure";
+    case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
+        return "15, 4-way handshake timeout";
+    case WIFI_REASON_GROUP_KEY_UPDATE_TIMEOUT:
+        return "16, Group key update timeout";
+    case WIFI_REASON_IE_IN_4WAY_DIFFERS:
+        return "17, IE differs in 4-way handshake";
+    case WIFI_REASON_GROUP_CIPHER_INVALID:
+        return "18, Invalid group cipher";
+    case WIFI_REASON_PAIRWISE_CIPHER_INVALID:
+        return "19, Invalid pairwise cipher";
+    case WIFI_REASON_AKMP_INVALID:
+        return "20, Invalid AKMP";
+    case WIFI_REASON_UNSUPP_RSN_IE_VERSION:
+        return "21, Unsupported RSN IE version";
+    case WIFI_REASON_INVALID_RSN_IE_CAP:
+        return "22, Invalid RSN IE capabilities";
+    case WIFI_REASON_802_1X_AUTH_FAILED:
+        return "23, 802.1X authentication failed";
+    case WIFI_REASON_CIPHER_SUITE_REJECTED:
+        return "24, Cipher suite rejected";
+    case WIFI_REASON_TDLS_PEER_UNREACHABLE:
+        return "25, TDLS peer unreachable";
+    case WIFI_REASON_TDLS_UNSPECIFIED:
+        return "26, TDLS unspecified";
+    case WIFI_REASON_SSP_REQUESTED_DISASSOC:
+        return "27, SSP requested disassociation";
+    case WIFI_REASON_NO_SSP_ROAMING_AGREEMENT:
+        return "28, No SSP roaming agreement";
+    case WIFI_REASON_BAD_CIPHER_OR_AKM:
+        return "29, Bad cipher or AKM";
+    case WIFI_REASON_NOT_AUTHORIZED_THIS_LOCATION:
+        return "30, Not authorized in this location";
+    case WIFI_REASON_SERVICE_CHANGE_PERCLUDES_TS:
+        return "31, Service change precludes TS";
+    case WIFI_REASON_UNSPECIFIED_QOS:
+        return "32, Unspecified QoS reason";
+    case WIFI_REASON_NOT_ENOUGH_BANDWIDTH:
+        return "33, Not enough bandwidth";
+    case WIFI_REASON_MISSING_ACKS:
+        return "34, Missing ACKs";
+    case WIFI_REASON_EXCEEDED_TXOP:
+        return "35, Exceeded TXOP";
+    case WIFI_REASON_STA_LEAVING:
+        return "36, Station leaving";
+    case WIFI_REASON_END_BA:
+        return "37, End of Block Ack (BA";
+    case WIFI_REASON_UNKNOWN_BA:
+        return "38, Unknown Block Ack (BA";
+    case WIFI_REASON_TIMEOUT:
+        return "39, Timeout";
+    case WIFI_REASON_PEER_INITIATED:
+        return "46, Peer initiated disassociation";
+    case WIFI_REASON_AP_INITIATED:
+        return "47, AP initiated disassociation";
+    case WIFI_REASON_INVALID_FT_ACTION_FRAME_COUNT:
+        return "48, Invalid FT action frame count";
+    case WIFI_REASON_INVALID_PMKID:
+        return "49, Invalid PMKID";
+    case WIFI_REASON_INVALID_MDE:
+        return "50, Invalid MDE";
+    case WIFI_REASON_INVALID_FTE:
+        return "51, Invalid FTE";
+    case WIFI_REASON_TRANSMISSION_LINK_ESTABLISH_FAILED:
+        return "67, Transmission link establishment failed";
+    case WIFI_REASON_ALTERATIVE_CHANNEL_OCCUPIED:
+        return "68, Alternative channel occupied";
+    case WIFI_REASON_BEACON_TIMEOUT:
+        return "200, Beacon timeout";
+    case WIFI_REASON_NO_AP_FOUND:
+        return "201, No AP found";
+    case WIFI_REASON_AUTH_FAIL:
+        return "202, Authentication failed";
+    case WIFI_REASON_ASSOC_FAIL:
+        return "203, Association failed";
+    case WIFI_REASON_HANDSHAKE_TIMEOUT:
+        return "204, Handshake timeout";
+    case WIFI_REASON_CONNECTION_FAIL:
+        return "205, Connection failed";
+    case WIFI_REASON_AP_TSF_RESET:
+        return "206, AP TSF reset";
+    case WIFI_REASON_ROAMING:
+        return "207, Roaming";
+    case WIFI_REASON_ASSOC_COMEBACK_TIME_TOO_LONG:
+        return "208, Association comeback time too long";
+    case WIFI_REASON_SA_QUERY_TIMEOUT:
+        return "209, SA query timeout";
+    case WIFI_REASON_NO_AP_FOUND_W_COMPATIBLE_SECURITY:
+        return "210, No AP found with compatible security";
+    case WIFI_REASON_NO_AP_FOUND_IN_AUTHMODE_THRESHOLD:
+        return "211, No AP found in auth mode threshold";
+    case WIFI_REASON_NO_AP_FOUND_IN_RSSI_THRESHOLD:
+        return "212, No AP found in RSSI threshold";
+    default:
+        return "Unknown reason";
+    }
+}
+
 static void wm_handler_on_wifi_disconnect(void *arg,
                                           esp_event_base_t event_base,
                                           int32_t event_id, void *event_data) {
@@ -40,8 +167,8 @@ static void wm_handler_on_wifi_disconnect(void *arg,
         ESP_LOGD(TAG, "station roaming, do nothing");
         return;
     }
-    ESP_LOGI(TAG, "Wi-Fi disconnected %d, trying to reconnect...",
-             disconn->reason);
+    ESP_LOGI(TAG, "Wi-Fi disconnected %s, trying to reconnect...",
+             wifi_reason_to_name(disconn->reason));
     esp_err_t err = esp_wifi_connect();
     if (err == ESP_ERR_WIFI_NOT_STARTED) {
         return;
@@ -140,9 +267,9 @@ esp_err_t wm_wifi_sta_do_disconnect(void) {
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED,
                                  &wm_handler_on_wifi_disconnect);
     esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP,
-                                                 &wm_handler_on_sta_got_ip);
-    esp_event_handler_unregister(
-        WIFI_EVENT, WIFI_EVENT_STA_CONNECTED, &wm_handler_on_wifi_connect);
+                                 &wm_handler_on_sta_got_ip);
+    esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_CONNECTED,
+                                 &wm_handler_on_wifi_connect);
     return esp_wifi_disconnect();
 }
 
