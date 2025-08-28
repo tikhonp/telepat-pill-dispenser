@@ -1,4 +1,5 @@
 #include "sleep_controller.h"
+#include "cells_count.h"
 #include "driver/gpio.h"
 #include "esp_err.h"
 #include "esp_log.h"
@@ -10,6 +11,7 @@
 #include <stdint.h>
 #include <sys/param.h>
 #include <sys/time.h>
+#include "cells_count.h"
 
 #define RESET_BUTTON_MASK (1ULL << CONFIG_RESET_BUTTON_PIN)
 
@@ -20,7 +22,7 @@ void de_sleep(void) {
     // find nearest cell
     uint32_t nearest_cell_time = 0;
 
-    for (int i = 0; i < CONFIG_SD_CELLS_COUNT; ++i) {
+    for (int i = 0; i < CELLS_COUNT; ++i) {
         sd_cell_schedule_t cell = sd_get_schedule_by_cell_indx(i);
         if (cell.start_timestamp > tv.tv_sec &&
             (cell.start_timestamp < nearest_cell_time ||

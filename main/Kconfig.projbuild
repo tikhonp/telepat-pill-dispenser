@@ -4,4 +4,54 @@ menu "PILL DISPENSER config"
         default UNKNOWN
         help
             Serial number of device for identification
+
+    choice HW_TYPE
+        prompt "Hardware type"
+        default HW_2X2_V1
+        help
+            Select hardware type of your pill dispenser
+
+        config HW_2X2_V1
+            bool "2x2 v1"
+        config HW_4X7_V1
+            bool "4x7 v1"
+    endchoice
+
+    menu "GPIO config"
+        config WS2812B_ENABLE_GPIO
+            int "WS2812B enable GPIO"
+            default 4
+            help
+                GPIO pin used to enable/disable power line for light strip.
+
+        config WS2812B_CONTROL_GPIO
+            int "WS2812B data GPIO"
+            default 8
+            help
+                GPIO pin used to drive WS2812B data line.
+
+        config RESET_BUTTON_PIN
+            int "Reset button pin"
+            default 2
+            help
+                Reset button pin
+
+        config BUZZER_PIN_NUMBER
+            int "Pin Number for Buzzer"
+            default 5
+            help
+                Pin number for Buzzer
+    endmenu
+
+    config RESET_HOLD_TIME_MS
+        int "Reset button hold time (ms)"
+        default 5000
+        help
+            How many milliseconds button must be held on boot to trigger reset
+
+    config BATTERY_VOLTAGE_DIVIDER_RATIO
+        int "Battery voltage divider ratio (scaled by 10)"
+        default 13
+        help
+            Voltage divider ratio used to measure battery voltage
 endmenu

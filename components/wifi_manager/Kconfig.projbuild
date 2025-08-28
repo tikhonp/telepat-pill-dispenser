@@ -1,12 +1,9 @@
-menu "Time sync configuration"
+menu "Wi-Fi connection configuration"
     config WM_SNTP_TIME_SERVER
         string "SNTP server name"
         default "pool.ntp.org"
         help
             Hostname of the main SNTP server.
-endmenu
-
-menu "Wi-Fi connection configuration"
 
     config WM_CAPTIVE_PORTAL_NETWORK_NAME
         string "Captive portal network name"
@@ -45,7 +42,7 @@ menu "Wi-Fi connection configuration"
 
         choice WM_WIFI_SCAN_AUTH_MODE_THRESHOLD
             prompt "WiFi Scan auth mode threshold"
-            default WM_WIFI_AUTH_OPEN
+            default WM_WIFI_AUTH_WEP
             help
                 The weakest authmode to accept in the scan mode.
 

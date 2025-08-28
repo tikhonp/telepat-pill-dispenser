@@ -19,7 +19,7 @@ menu "Medsenger HTTP requests"
     
     config REQUEST_RETRY_COUNT
         int "Request retry count"
-        default 2
+        default 3
         help
             Number of HTTP-request retries
 endmenu

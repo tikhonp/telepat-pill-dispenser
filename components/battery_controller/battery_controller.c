@@ -6,7 +6,7 @@
 
 #define BATTERY_ADC_UNIT ADC_UNIT_1
 #define BATTERY_ADC_CHANNEL ADC_CHANNEL_3 // GPIO3
-#define BATTERY_DIVIDER_RATIO 1.3f
+#define BATTERY_DIVIDER_RATIO (float)CONFIG_BATTERY_VOLTAGE_DIVIDER_RATIO / 10.0f
 
 static adc_oneshot_unit_handle_t adc_handle;
 static adc_cali_handle_t adc_cali_handle;

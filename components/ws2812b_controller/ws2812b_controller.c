@@ -1,5 +1,4 @@
 #include "ws2812b_controller.h"
-#include "sdkconfig.h"
 #include <led_strip.h>
 #include <esp_log.h>
 #include <freertos/FreeRTOS.h>
