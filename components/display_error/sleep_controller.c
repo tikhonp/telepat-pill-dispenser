@@ -31,7 +31,7 @@ void de_sleep(void) {
     }
 
     uint32_t medsenger_refresh_rate;
-    ESP_ERROR_CHECK(m_get_medsenger_refresh_rate_sec(&medsenger_refresh_rate));
+    m_get_medsenger_refresh_rate_sec(&medsenger_refresh_rate);
 
     uint64_t wakeup_time_sec;
     if (nearest_cell_time != 0)

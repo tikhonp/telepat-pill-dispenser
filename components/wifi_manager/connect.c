@@ -3,21 +3,24 @@
 #include "esp_err.h"
 #include "esp_netif_sntp.h"
 #include "esp_system.h"
+#include "led_controller.h"
 #include "sdkconfig.h"
 #include "time_sync_private.h"
 #include "wifi_creds.h"
 #include "wifi_manager_private.h"
-#include "led_controller.h"
-#include <string.h>
 #include <esp_log.h>
+#include <string.h>
 
 static const char *TAG = "wifi_manager";
 
 esp_err_t wm_connect() {
     wifi_creds_t creds;
     esp_err_t err = gm_get_wifi_creds(&creds);
+    ESP_LOGI(TAG, "wm_connect: got creds (err: %s), ssid: '%s', psk: '%s'",
+             esp_err_to_name(err), creds.ssid, creds.psk);
     if (err != ESP_OK) {
-        ESP_LOGW(TAG, "wm_connect: no credentials found (err: %s)", esp_err_to_name(err));
+        ESP_LOGW(TAG, "wm_connect: no credentials found (err: %s)",
+                 esp_err_to_name(err));
     }
     if (err != ESP_OK) {
         de_stop_blinking();

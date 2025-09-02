@@ -288,11 +288,19 @@ esp_err_t wm_wifi_connect(wifi_creds_t creds) {
                 .sort_method = WM_WIFI_CONNECT_AP_SORT_METHOD,
                 .threshold.rssi = CONFIG_WM_WIFI_SCAN_RSSI_THRESHOLD,
                 .threshold.authmode = WM_WIFI_SCAN_AUTH_MODE_THRESHOLD,
+                .pmf_cfg.capable = true,
+                .pmf_cfg.required = false,
             },
     };
-    strncpy((char *)wifi_config.sta.ssid, creds.ssid,
+    strlcpy((char *)wifi_config.sta.ssid, creds.ssid,
             sizeof(wifi_config.sta.ssid));
-    strncpy((char *)wifi_config.sta.password, creds.psk,
+    strlcpy((char *)wifi_config.sta.password, creds.psk,
             sizeof(wifi_config.sta.password));
+
+    ESP_LOGI(TAG, "Connecting to SSID='%s' (len=%d) password='%s' (len=%d)",
+             wifi_config.sta.ssid, (int)strlen((char *)wifi_config.sta.ssid),
+             wifi_config.sta.password,
+             (int)strlen((char *)wifi_config.sta.password));
+
     return wm_wifi_sta_do_connect(wifi_config, true);
 }

@@ -59,7 +59,7 @@ esp_err_t cdc_monitor(void) {
         schedule[i] = sd_get_schedule_by_cell_indx(i);
 
     uint32_t medsenger_refresh_rate;
-    ESP_ERROR_CHECK(m_get_medsenger_refresh_rate_sec(&medsenger_refresh_rate));
+    m_get_medsenger_refresh_rate_sec(&medsenger_refresh_rate);
 
     ESP_LOGI(TAG, "Got medsenger refresh rate: %" PRIu32,
              medsenger_refresh_rate);
