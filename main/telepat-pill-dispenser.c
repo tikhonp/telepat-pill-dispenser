@@ -47,7 +47,7 @@ static void send_saved_on_flash_events() {
     err = se_get_fsent_events(events, EVENTS_COUNT_BUFFER, &elements_count);
     ESP_ERROR_CHECK(err);
 
-    ESP_LOGI(TAG, "Send save on flash elements: %d", elements_count);
+    ESP_LOGI(TAG, "Send save on flash elements: %zu", elements_count);
 
     if (elements_count == 0)
         return;
@@ -65,13 +65,15 @@ static void send_saved_on_flash_events() {
 }
 
 static void main_flow(void) {
-    esp_log_level_set("wifi", ESP_LOG_DEBUG);
-    esp_log_level_set("wpa", ESP_LOG_DEBUG);
-
     ESP_LOGI(TAG, "Starting pill-dispenser...");
+
+    cdc_deinit_led_signals();
+    cdc_init_led_signals();
+
     battery_monitor_init();
     int voltage = battery_monitor_read_voltage();
     ESP_LOGI(TAG, "Battery voltage: %d mV\n", voltage);
+
 
     // Initialize NVS, network and freertos
     esp_err_t err = nvs_flash_init();
@@ -143,8 +145,6 @@ static void main_flow(void) {
     b_init();
     bc_init();
     de_init();
-    cdc_deinit_led_signals();
-    cdc_init_led_signals();
 
     ESP_LOGI(TAG, "Connecting to Wi-Fi...");
     if (wm_connect() != ESP_OK) {

@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include <sys/param.h>
 #include <sys/time.h>
-#include "cells_count.h"
+#include "cell_led_controller.h"
 
 #define RESET_BUTTON_MASK (1ULL << CONFIG_RESET_BUTTON_PIN)
 
@@ -40,6 +40,10 @@ void de_sleep(void) {
     else
         wakeup_time_sec = medsenger_refresh_rate;
 
+    // pull led strip pin to low
+    cdc_setup_enable_pin_before_sleep();
+
+    // wakeup button config
     gpio_config_t wakeup_button_conf = {
         .pin_bit_mask = RESET_BUTTON_MASK,
         .mode = GPIO_MODE_INPUT,
