@@ -152,7 +152,9 @@ static void main_flow(void) {
             ESP_LOGE(TAG, "Failed to connect to wi-fi");
             de_start_blinking(100);
             vTaskDelay(pdMS_TO_TICKS(2000));
+            ESP_LOGI(TAG, "Call stop blinking");
             de_stop_blinking();
+            ESP_LOGI(TAG, "Continuing in debug mode");
         }
         gm_set_medsenger_synced(false);
         ESP_LOGE(TAG, "Failed to connect to wi-fi");
