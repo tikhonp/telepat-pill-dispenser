@@ -30,6 +30,12 @@ menu "PILL DISPENSER config"
             help
                 GPIO pin used to drive WS2812B data line.
 
+        config MAIN_BUTTON_PIN
+            int "Main button pin"
+            default 6
+            help
+                Main button pin
+
         config RESET_BUTTON_PIN
             int "Reset button pin"
             default 2

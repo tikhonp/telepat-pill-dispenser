@@ -28,8 +28,15 @@ typedef struct {
 static TaskHandle_t blink_task_handle = NULL;
 
 static const BlinkStep red_steps[] = {
-    {255, 0, 0, 300, false},
-    {0, 0, 0, 200, false},
+    // r g b duration_ms smooth
+    {255, 0, 0, 500, false},
+    {0, 0, 0, 500, false},
+    {255, 0, 0, 500, false},
+    {0, 0, 0, 500, false},
+    {255, 0, 0, 500, false},
+    {0, 0, 0, 500, false},
+    {255, 0, 0, 500, false},
+    {0, 0, 0, 500, false},
 };
 static const BlinkPattern red_pattern = {
     .steps = red_steps,
@@ -135,7 +142,7 @@ void de_start_blinking(int error_code) {
         return;
     }
 
-    ESP_LOGI(TAG, "Starting blink task");
+    ESP_LOGI(TAG, "Starting blink task with error code: %d", error_code);
 
     const BlinkPattern *pattern = &red_pattern; // default
     switch (error_code) {
@@ -167,9 +174,13 @@ void de_start_blinking(int error_code) {
 }
 
 void de_stop_blinking(void) {
+    ESP_LOGI(TAG, "Stopping blink task...");
     if (blink_task_handle != NULL) {
+        ESP_LOGI(TAG, "Deleting blink task");
         vTaskDelete(blink_task_handle);
+        ESP_LOGI(TAG, "Blink task deleted");
         blink_task_handle = NULL;
+        ESP_LOGI(TAG, "Clearing LED strip");
         // Выключить все светодиоды
         ws2812b_clear_all();
     }

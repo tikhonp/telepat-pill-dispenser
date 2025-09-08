@@ -1,5 +1,8 @@
 #include "cell_led_controller.h"
 #include "cells_count.h"
+#include "esp_err.h"
+#include "hal/gpio_types.h"
+#include "sdkconfig.h"
 #include "ws2812b_controller.h"
 #include <driver/gpio.h>
 #include <esp_log.h>
@@ -13,7 +16,6 @@
 static const char *TAG = "leds-ws2812-controller";
 
 #define LED_GPIO CONFIG_WS2812B_CONTROL_GPIO
-#define POWER_GPIO CONFIG_WS2812B_ENABLE_GPIO
 
 static SemaphoreHandle_t leds_mu;
 static bool leds_state[CELLS_COUNT] = {0};
@@ -34,10 +36,10 @@ void cdc_init_led_signals(void) {
     assert(leds_mu != NULL);
 
     // Включаем питание на POWER_GPIO
-    gpio_reset_pin(POWER_GPIO);
-    gpio_set_direction(POWER_GPIO, GPIO_MODE_OUTPUT);
-    gpio_set_level(POWER_GPIO, 1);
-    ESP_LOGI(TAG, "POWER GPIO %d set HIGH", POWER_GPIO);
+    gpio_reset_pin(CONFIG_WS2812B_ENABLE_GPIO);
+    gpio_set_direction(CONFIG_WS2812B_ENABLE_GPIO, GPIO_MODE_OUTPUT);
+    gpio_set_level(CONFIG_WS2812B_ENABLE_GPIO, 1);
+    ESP_LOGI(TAG, "POWER GPIO %d set HIGH", CONFIG_WS2812B_ENABLE_GPIO);
 
     if (!ws2812b_is_initialized()) {
         if (!ws2812b_init(LED_GPIO, CELLS_COUNT)) {
@@ -91,8 +93,19 @@ void cdc_deinit_led_signals(void) {
     vSemaphoreDelete(leds_mu);
     leds_mu = NULL;
     // Выключаем питание на POWER_GPIO
-    gpio_set_level(POWER_GPIO, 0);
-    ESP_LOGI(TAG, "POWER GPIO %d set LOW", POWER_GPIO);
+    gpio_set_level(CONFIG_WS2812B_ENABLE_GPIO, 0);
+    ESP_LOGI(TAG, "POWER GPIO %d set LOW", CONFIG_WS2812B_ENABLE_GPIO);
 
     ESP_LOGI(TAG, "WS2812B controller usage ended");
+}
+
+void cdc_setup_enable_pin_before_sleep(void) {
+    gpio_config_t led_control_pin_conf = {
+        .pin_bit_mask = 1ULL << CONFIG_WS2812B_ENABLE_GPIO,
+        .mode = GPIO_MODE_OUTPUT_OD,
+        .pull_up_en = false,
+        .pull_down_en = true,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+    gpio_config(&led_control_pin_conf);
 }

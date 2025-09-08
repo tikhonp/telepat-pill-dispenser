@@ -4,10 +4,7 @@
 #include "freertos/idf_additions.h"
 #include "freertos/projdefs.h"
 #include "iot_button.h"
-
-#define BUTTON_PIN 6
-
-/*static const char *TAG = "button-controller";*/
+#include "sdkconfig.h"
 
 static EventGroupHandle_t bc_event_group;
 const int bc_single_press = BIT0;
@@ -30,7 +27,7 @@ void bc_init(void) {
 
     button_config_t btn_cfg = {0};
     button_gpio_config_t gpio_cfg = {
-        .gpio_num = BUTTON_PIN,
+        .gpio_num = CONFIG_MAIN_BUTTON_PIN,
         .active_level = BUTTON_INACTIVE,
         .enable_power_save = false,
         .disable_pull = false,

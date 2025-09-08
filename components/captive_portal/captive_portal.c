@@ -205,7 +205,7 @@ static bool check_sta_connect(const char *ssid, const char *password) {
         return false;
     }
 
-    ESP_LOGI(TAG, "Try connect STA to SSID: %s", ssid);
+    ESP_LOGI(TAG, "Try connect STA to SSID: %s and PSK: '%s'", ssid, password);
 
     // Ждем до 10 секунд на подключение
     for (int i = 0; i < 20; ++i) {
@@ -220,7 +220,38 @@ static bool check_sta_connect(const char *ssid, const char *password) {
     return false;
 }
 
-// --- POST-запрос: только парсинг и сигнал ---
+/* in-place URL-decode: converts %XX and +.
+   Safe to run on a buffer that contains the urlencoded value.
+*/
+static void url_decode_inplace(char *s) {
+    char *src = s;
+    char *dst = s;
+
+    while (*src) {
+        if (*src == '%') {
+            /* expect two hex digits after % */
+            if (isxdigit((unsigned char)src[1]) &&
+                isxdigit((unsigned char)src[2])) {
+                char hex[3] = {src[1], src[2], 0};
+                *dst++ = (char)strtol(hex, NULL, 16);
+                src += 3;
+            } else {
+                /* malformed % sequence -> copy literally */
+                *dst++ = *src++;
+            }
+        } else if (*src == '+') {
+            /* plus becomes space in application/x-www-form-urlencoded */
+            *dst++ = ' ';
+            src++;
+        } else {
+            *dst++ = *src++;
+        }
+    }
+    *dst = '\0';
+}
+
+/* --- POST-запрос: только парсинг и сигнал ---
+   (изменения: url_decode_inplace вызов, безопасное копирование в s_user_data) */
 static esp_err_t portal_post_handler(httpd_req_t *req) {
     ESP_LOGI(TAG, "POST request - URI: %s", req->uri);
 
@@ -236,7 +267,7 @@ static esp_err_t portal_post_handler(httpd_req_t *req) {
     }
     buf[received] = 0;
 
-    // Парсим форму
+    /* Парсим форму (application/x-www-form-urlencoded) */
     char ssid[33] = {0}, password[65] = {0};
     err = httpd_query_key_value(buf, "ssid", ssid, sizeof(ssid));
     if (err != ESP_OK)
@@ -245,16 +276,23 @@ static esp_err_t portal_post_handler(httpd_req_t *req) {
     if (err != ESP_OK)
         return err;
 
-    strncpy(s_user_data.ssid, ssid, sizeof(s_user_data.ssid));
-    strncpy(s_user_data.psk, password, sizeof(s_user_data.psk));
+    /* Декодируем percent-encoding */
+    url_decode_inplace(ssid);
+    url_decode_inplace(password);
+
+    /* Безопасное копирование в пользовательскую структуру */
+    snprintf(s_user_data.ssid, sizeof(s_user_data.ssid), "%s", ssid);
+    snprintf(s_user_data.psk, sizeof(s_user_data.psk), "%s", password);
 
     ESP_LOGI(TAG, "User requested WiFi SSID: %s", s_user_data.ssid);
-    ESP_LOGI(TAG, "User requested WiFi Password: %s", s_user_data.psk);
+    /* НЕ логируйте пароль в продакшене. Только для отладки: */
+    ESP_LOGD(TAG, "User requested WiFi Password (decoded): %s",
+             s_user_data.psk);
 
-    // Сигнал основной задаче на попытку подключения
+    /* Сигнал основной задаче на попытку подключения */
     xEventGroupSetBits(s_event_group, WIFI_PORTAL_EVENT_SUCCESS);
 
-    // Отображаем пользователю, что запрос ушёл и идёт попытка подключения (блокировка уже на JS)
+    /* Отправляем страницу с JS-индикатором */
     err = httpd_resp_set_type(req, "text/html");
     if (err != ESP_OK)
         return err;

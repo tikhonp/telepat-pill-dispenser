@@ -4,21 +4,22 @@
 #define STORAGE_NAMESPACE "mdsnr-data"
 #define STORAGE_SCHEDULE_KEY "rr"
 
-esp_err_t m_get_medsenger_refresh_rate_sec(uint32_t *refresh_rate) {
+void m_get_medsenger_refresh_rate_sec(uint32_t *refresh_rate) {
+    *refresh_rate = 3600;
     esp_err_t err;
     nvs_handle_t m_handle;
 
     err = nvs_open(STORAGE_NAMESPACE, NVS_READONLY, &m_handle);
     if (err != ESP_OK)
-        return err;
+        return;
     if (err == ESP_ERR_NVS_NOT_FOUND) {
         *refresh_rate = 0;
-        return ESP_OK;
+        return;
     }
 
     err = nvs_get_u32(m_handle, STORAGE_SCHEDULE_KEY, refresh_rate);
     nvs_close(m_handle);
-    return err;
+    return;
 }
 
 esp_err_t m_save_medsenger_refresh_rate_sec(uint32_t refresh_rate) {
