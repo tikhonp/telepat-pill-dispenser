@@ -24,6 +24,7 @@
 #include "sdkconfig.h"
 #include "send_event_data.h"
 #include "sleep_controller.h"
+#include "wifi_creds.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/time.h>
@@ -38,6 +39,7 @@ RTC_DATA_ATTR static int boot_count = 0;
 
 #define EVENTS_COUNT_BUFFER 64
 
+#ifndef CONFIG_FLASH_DEFAULT_WIFI_CREDS
 static void send_saved_on_flash_events() {
     esp_err_t err;
     se_send_event_t events[EVENTS_COUNT_BUFFER],
@@ -73,7 +75,6 @@ static void main_flow(void) {
     battery_monitor_init();
     int voltage = battery_monitor_read_voltage();
     ESP_LOGI(TAG, "Battery voltage: %d mV\n", voltage);
-
 
     // Initialize NVS, network and freertos
     esp_err_t err = nvs_flash_init();
@@ -197,9 +198,34 @@ static void main_flow(void) {
     cdc_deinit_led_signals();
     de_sleep();
 }
+#endif
+
+#ifdef CONFIG_FLASH_DEFAULT_WIFI_CREDS
+static void flash_default_wifi_credentials() {
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES ||
+        err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        err = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(err);
+    wifi_creds_t creds = {
+        .ssid = CONFIG_DEFAULT_WIFI_SSID,
+        .psk = CONFIG_DEFAULT_WIFI_PSK,
+    };
+    ESP_LOGI(TAG, "Flashing default Wi-Fi credentials: ssid='%s', psk='%s'",
+             creds.ssid, creds.psk);
+    ESP_ERROR_CHECK(gm_set_wifi_creds(&creds));
+    ESP_LOGI(TAG, "Default Wi-Fi credentials flashed");
+}
+#endif
 
 void app_main(void) {
     ++boot_count;
     ESP_LOGI(TAG, "Boot count: %d", boot_count);
+#ifdef CONFIG_FLASH_DEFAULT_WIFI_CREDS
+    flash_default_wifi_credentials();
+#else
     main_flow();
+#endif
 }

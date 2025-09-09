@@ -120,6 +120,7 @@ esp_err_t cdc_monitor(void) {
         if (xSemaphoreTake(button_pressed, (TickType_t)10) == pdTRUE) {
             // button pressed
             ESP_LOGI(TAG, "Button pressed");
+            vTaskDelay(500 / portTICK_PERIOD_MS);
 
             for (i = 0; i < CELLS_COUNT; ++i)
                 if (active_cells[i]) {
