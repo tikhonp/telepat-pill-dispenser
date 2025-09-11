@@ -10,12 +10,12 @@
 #include "esp_timer.h"
 #include "freertos/idf_additions.h"
 #include "freertos/projdefs.h"
+#include "led_controller.h"
 #include "medsenger_http_requests.h"
 #include "medsenger_refresh_rate.h"
 #include "medsenger_synced.h"
 #include "portmacro.h"
 #include "schedule_data.h"
-#include "sdkconfig.h"
 #include "send_event_data.h"
 #include <stdint.h>
 #include <sys/time.h>
@@ -35,7 +35,7 @@ static void is_button_pressed_listner(void *params) {
 static esp_err_t cdc_process_cell(sd_cell_schedule_t cell, uint8_t indx) {
     if (!gm_get_medsenger_synced() &&
         !sd_get_processing_without_connection_allowed(&cell)) {
-        de_display_error(ACTIVE_CELL_WITH_FAILED_CONNECTION);
+        display_error(DE_STAY_HOLDING);
         return ESP_FAIL;
     }
 
@@ -71,8 +71,11 @@ esp_err_t cdc_monitor(void) {
         bool play_signal = false;
         for (i = 0; i < CELLS_COUNT; ++i) {
 
-            /*ESP_LOGI(TAG, "checking cell is active: [%d], st: [%"PRIu32"], et: [%"PRIu32"], cur: [%lld]", */
-            /*         active_cells[i], schedule[i].start_timestamp, schedule[i].end_timestamp, tv.tv_sec);*/
+            ESP_LOGI(TAG,
+                     "checking cell is active: [%d], st: [%" PRIu32
+                     "], et: [%" PRIu32 "], cur: [%lld]",
+                     active_cells[i], schedule[i].start_timestamp,
+                     schedule[i].end_timestamp, tv.tv_sec);
 
             if (!active_cells[i] &&
                 (uint32_t)tv.tv_sec > schedule[i].start_timestamp &&
@@ -106,7 +109,10 @@ esp_err_t cdc_monitor(void) {
         for (i = 0; i < CELLS_COUNT; i++)
             is_true_in_array = is_true_in_array ? true : active_cells[i];
         if (!is_true_in_array) {
-            ESP_LOGI(TAG, "No tasks found. Exiting...");
+            ESP_LOGI(TAG,
+                     "No tasks found for current timestamp: %" PRIu32
+                     ". Exiting...",
+                     (uint32_t)tv.tv_sec);
             // NO tasks
             return ESP_OK;
         }

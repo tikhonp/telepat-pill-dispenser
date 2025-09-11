@@ -1,6 +1,5 @@
 #include "cell_led_controller.h"
 #include "cells_count.h"
-#include "esp_err.h"
 #include "hal/gpio_types.h"
 #include "sdkconfig.h"
 #include "ws2812b_controller.h"

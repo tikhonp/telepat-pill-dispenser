@@ -7,7 +7,7 @@ enum b_notification_t {
     PILL_NOTIFICATION,
 };
 
-void b_init(void);
+void buzzer_init(void);
 
 /*
 Tells buzzer thread to play specific notification pattern.

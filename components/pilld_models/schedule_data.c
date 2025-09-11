@@ -17,7 +17,7 @@ const char *TAG = "cell-schedule-data";
 static sd_cell_schedule_t sd_schedule_data[CELLS_COUNT];
 static SemaphoreHandle_t sd_schedule_data_mutex;
 
-void sd_init(void) {
+void schedule_data_init(void) {
     sd_schedule_data_mutex = xSemaphoreCreateMutex();
     assert(sd_schedule_data_mutex != NULL);
 }

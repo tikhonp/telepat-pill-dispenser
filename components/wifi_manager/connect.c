@@ -24,7 +24,7 @@ esp_err_t wm_connect() {
     }
     if (err != ESP_OK) {
         de_stop_blinking();
-        de_start_blinking(106);
+        de_start_blinking(DE_WIFI);
         wifi_credentials_t obtained_creds = start_wifi_captive_portal(
             CONFIG_WM_CAPTIVE_PORTAL_NETWORK_NAME "-" CONFIG_SERIAL_NUMBER, "");
         // TODO: check creds.success
