@@ -1,13 +1,11 @@
-#include "led_indicator.h"
-#include "led_strip_types.h"
-
+#include "led_controller.h"
+#include "cells_count.h"
 #include "sdkconfig.h"
 #include "ws2812b_controller.h"
 #include <esp_log.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <string.h>
-#include "cells_count.h"
 
 #define LED_GPIO_NUM CONFIG_WS2812B_CONTROL_GPIO
 #define LED_COUNT CELLS_COUNT
@@ -134,7 +132,7 @@ static void led_blink_pattern_task(void *param) {
 }
 
 // Старт мигания с выбором паттерна по error_code
-void de_start_blinking(int error_code) {
+void de_start_blinking(de_error_code_t error_code) {
     init_led_strip_once();
 
     if (blink_task_handle != NULL) {
@@ -146,22 +144,25 @@ void de_start_blinking(int error_code) {
 
     const BlinkPattern *pattern = &red_pattern; // default
     switch (error_code) {
-    case 101: // Example error code for red
+    case DE_RED:
+        pattern = &red_pattern;
+        break;
+    case DE_STAY_HOLDING: // Example error code for red
         pattern = &stay_holding_pattern;
         break;
-    case 102:
+    case DE_GREEN:
         pattern = &green_pattern;
         break;
-    case 103:
+    case DE_OK:
         pattern = &ok_pattern;
         break;
-    case 104:
+    case DE_WIFI_CONNECTED:
         pattern = &wifi_connected_pattern;
         break;
-    case 105:
+    case DE_SYNC_FAILED:
         pattern = &sync_failed_pattern;
         break;
-    case 106:
+    case DE_WIFI:
         pattern = &wifi_pattern;
         break;
     default:

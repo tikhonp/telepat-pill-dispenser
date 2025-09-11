@@ -22,7 +22,7 @@ static void run_play_tasks_listener(void *pvParameters) {
     vTaskDelete(NULL);
 }
 
-void b_init(void) {
+void buzzer_init(void) {
     b_buzzer_play_tasks = xQueueGenericCreate(b_buzzer_queue_len, sizeof(int),
                                               queueQUEUE_TYPE_SET);
     if (b_buzzer_play_tasks == NULL) {

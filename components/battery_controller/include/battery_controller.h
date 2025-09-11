@@ -1,7 +1,4 @@
-#ifndef BATTERY_MONITOR_H
-#define BATTERY_MONITOR_H
+#pragma once
 
 void battery_monitor_init(void);
 int battery_monitor_read_voltage(void);
-
-#endif // BATTERY_MONITOR_H

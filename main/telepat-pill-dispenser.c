@@ -12,21 +12,19 @@
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_sleep.h"
-#include "esp_system.h"
 #include "freertos/FreeRTOS.h" // IWYU pragma: export
 #include "freertos/task.h"
 #include "init_global_manager.h"
 #include "led_controller.h"
 #include "medsenger_http_requests.h"
 #include "medsenger_synced.h"
+#include "mfg_data.h"
 #include "nvs_flash.h"
 #include "schedule_data.h"
 #include "sdkconfig.h"
 #include "send_event_data.h"
 #include "sleep_controller.h"
-#include "wifi_creds.h"
 #include <stddef.h>
-#include <stdint.h>
 #include <sys/time.h>
 
 #define TAG "telepat-pill-dispenser"
@@ -39,8 +37,7 @@ RTC_DATA_ATTR static int boot_count = 0;
 
 #define EVENTS_COUNT_BUFFER 64
 
-#ifndef CONFIG_FLASH_DEFAULT_WIFI_CREDS
-static void send_saved_on_flash_events() {
+static void send_saved_on_flash_events(const char *serial_nu) {
     esp_err_t err;
     se_send_event_t events[EVENTS_COUNT_BUFFER],
         new_events[EVENTS_COUNT_BUFFER];
@@ -55,7 +52,8 @@ static void send_saved_on_flash_events() {
         return;
 
     for (int i = 0; i < elements_count; ++i) {
-        err = mhr_submit_succes_cell(events[i].timestamp, events[i].cell_indx);
+        err = mhr_submit_succes_cell(events[i].timestamp, events[i].cell_indx,
+                                     serial_nu);
         if (err != ESP_OK) {
             ESP_LOGI(TAG, "Failed to send saved data to Medsenger");
             new_events[new_elements_count++] = events[i];
@@ -69,12 +67,12 @@ static void send_saved_on_flash_events() {
 static void main_flow(void) {
     ESP_LOGI(TAG, "Starting pill-dispenser...");
 
+    // TODO: remove led deinit
     cdc_deinit_led_signals();
     cdc_init_led_signals();
 
     battery_monitor_init();
-    int voltage = battery_monitor_read_voltage();
-    ESP_LOGI(TAG, "Battery voltage: %d mV\n", voltage);
+    ESP_LOGI(TAG, "Battery voltage: %d mV", battery_monitor_read_voltage());
 
     // Initialize NVS, network and freertos
     esp_err_t err = nvs_flash_init();
@@ -83,11 +81,17 @@ static void main_flow(void) {
         ESP_ERROR_CHECK(nvs_flash_erase());
         err = nvs_flash_init();
     }
+
+    ESP_ERROR_CHECK(mfg_data_init());
+    char serial_nu[SERIAL_NU_BUF_LEN];
+    ESP_ERROR_CHECK(read_serial_nu(serial_nu, SERIAL_NU_BUF_LEN));
+    ESP_LOGI(TAG, "Serial number: %s", serial_nu);
+
     esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
 
-    bool debug_boot = 0;
+    bool debug_boot = false;
 
-    if (cause == 7) {
+    if (cause == ESP_SLEEP_WAKEUP_GPIO) {
         ESP_LOGI(TAG, "Woke up by EXT1 (reset button).");
 
         debug_boot = true;
@@ -99,10 +103,11 @@ static void main_flow(void) {
                                  .pull_down_en = GPIO_PULLDOWN_DISABLE,
                                  .intr_type = GPIO_INTR_DISABLE};
         gpio_config(&io_conf);
+
         if (gpio_get_level(CONFIG_RESET_BUTTON_PIN) == 0) {
             ESP_LOGI(TAG, "Button pressed, waiting %d ms to confirm hold...",
                      CONFIG_RESET_HOLD_TIME_MS);
-            de_start_blinking(101);
+            de_start_blinking(DE_STAY_HOLDING);
 
             int elapsed = 0;
             while (gpio_get_level(CONFIG_RESET_BUTTON_PIN) == 0 &&
@@ -114,15 +119,14 @@ static void main_flow(void) {
             de_stop_blinking();
 
             if (elapsed >= CONFIG_RESET_HOLD_TIME_MS) {
-                de_start_blinking(100);
-                vTaskDelay(pdMS_TO_TICKS(
-                    1000)); // Give some time for the button press to be registered
+                de_start_blinking(DE_RED);
+                vTaskDelay(pdMS_TO_TICKS(1000));
                 ESP_LOGI(TAG, "Button held for %d ms. Resetting NVS.",
                          CONFIG_RESET_HOLD_TIME_MS);
                 nvs_clean_all();
             } else {
                 ESP_LOGI(TAG, "Button was released before timeout.");
-                de_start_blinking(103); // green
+                de_start_blinking(DE_GREEN); // green
             }
         } else {
             ESP_LOGI(TAG, "Button not pressed.");
@@ -130,7 +134,7 @@ static void main_flow(void) {
     }
     if (debug_boot) {
         ESP_LOGI(TAG, "Debug boot enabled");
-        de_start_blinking(102);
+        de_start_blinking(DE_GREEN);
         vTaskDelay(pdMS_TO_TICKS(
             1000)); // Give some time for the button press to be registered
         de_stop_blinking();
@@ -141,17 +145,17 @@ static void main_flow(void) {
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-    sd_init();
-    gm_init();
-    b_init();
-    bc_init();
-    de_init();
+    schedule_data_init();
+    global_manager_init();
+    buzzer_init();
+    button_controller_init();
+    display_error_init();
 
     ESP_LOGI(TAG, "Connecting to Wi-Fi...");
-    if (wm_connect() != ESP_OK) {
+    if (wm_connect(serial_nu) != ESP_OK) {
         if (debug_boot) {
             ESP_LOGE(TAG, "Failed to connect to wi-fi");
-            de_start_blinking(100);
+            de_start_blinking(DE_RED);
             vTaskDelay(pdMS_TO_TICKS(2000));
             ESP_LOGI(TAG, "Call stop blinking");
             de_stop_blinking();
@@ -162,32 +166,32 @@ static void main_flow(void) {
         err = sd_load_schedule_from_flash();
         if (err != ESP_OK) {
             ESP_LOGI(TAG, "Failed to load schedule from flash");
-            de_display_error(FLASH_LOAD_FAILED);
+            display_error(DE_STAY_HOLDING);
         }
     } else {
         if (debug_boot) {
-            de_start_blinking(104);
+            de_start_blinking(DE_WIFI_CONNECTED);
             vTaskDelay(pdMS_TO_TICKS(2000));
             de_stop_blinking();
         }
-        if (mhr_fetch_schedule(&sd_save_schedule) != ESP_OK) {
+        if (mhr_fetch_schedule(&sd_save_schedule, serial_nu) != ESP_OK) {
             gm_set_medsenger_synced(false);
             ESP_LOGE(TAG, "Failed to fetch medsenger schedule");
-            de_start_blinking(105);
+            de_start_blinking(DE_SYNC_FAILED);
             err = sd_load_schedule_from_flash();
             if (err != ESP_OK) {
                 ESP_LOGI(TAG, "Failed to load schedule from flash");
-                de_display_error(FLASH_LOAD_FAILED);
+                display_error(DE_STAY_HOLDING);
             }
         }
     }
     if (gm_get_medsenger_synced())
-        send_saved_on_flash_events();
+        send_saved_on_flash_events(serial_nu);
     sd_print_schedule();
 
     vTaskDelay(pdMS_TO_TICKS(2000));
 
-    err = cdc_monitor();
+    err = cdc_monitor(serial_nu);
     if (err != ESP_OK)
         while (1)
             vTaskDelay(pdMS_TO_TICKS(1000));
@@ -198,34 +202,9 @@ static void main_flow(void) {
     cdc_deinit_led_signals();
     de_sleep();
 }
-#endif
-
-#ifdef CONFIG_FLASH_DEFAULT_WIFI_CREDS
-static void flash_default_wifi_credentials() {
-    esp_err_t err = nvs_flash_init();
-    if (err == ESP_ERR_NVS_NO_FREE_PAGES ||
-        err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        err = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(err);
-    wifi_creds_t creds = {
-        .ssid = CONFIG_DEFAULT_WIFI_SSID,
-        .psk = CONFIG_DEFAULT_WIFI_PSK,
-    };
-    ESP_LOGI(TAG, "Flashing default Wi-Fi credentials: ssid='%s', psk='%s'",
-             creds.ssid, creds.psk);
-    ESP_ERROR_CHECK(gm_set_wifi_creds(&creds));
-    ESP_LOGI(TAG, "Default Wi-Fi credentials flashed");
-}
-#endif
 
 void app_main(void) {
     ++boot_count;
     ESP_LOGI(TAG, "Boot count: %d", boot_count);
-#ifdef CONFIG_FLASH_DEFAULT_WIFI_CREDS
-    flash_default_wifi_credentials();
-#else
     main_flow();
-#endif
 }

@@ -28,7 +28,7 @@ typedef struct {
 } sd_cell_schedule_t;
 #pragma pack(pop)
 
-void sd_init(void);
+void schedule_data_init(void);
 
 /*
 Prints cell data for debug using ESP_LOGI.

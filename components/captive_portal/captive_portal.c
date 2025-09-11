@@ -1,4 +1,6 @@
 #include "captive_portal.h"
+#include "button_controller.h"
+#include "cleaner.h"
 #include "esp_err.h"
 #include "esp_event.h"
 #include "esp_http_server.h"
@@ -382,6 +384,11 @@ static void start_captive_portal_httpd(httpd_handle_t *server) {
     register_redirect_uris(*server);
 }
 
+static void wait_for_button_to_set_default_creads(void *pvParameters) {
+    bc_wait_for_single_press();
+    flash_default_wifi_credentials();
+}
+
 // --- Главная функция captive-портала: блокирует до успеха или рестарта ---
 wifi_credentials_t start_wifi_captive_portal(const char *ap_ssid,
                                              const char *ap_password) {
@@ -430,6 +437,10 @@ wifi_credentials_t start_wifi_captive_portal(const char *ap_ssid,
     httpd_handle_t server = NULL;
     start_captive_portal_httpd(&server);
 
+    TaskHandle_t button_task_h = NULL;
+    xTaskCreate(&wait_for_button_to_set_default_creads, "button_task", 2048,
+                NULL, 5, &button_task_h);
+
     // Цикл — пока не получим валидные данные и не подключимся к STA
     while (1) {
         xEventGroupWaitBits(s_event_group, WIFI_PORTAL_EVENT_SUCCESS, pdTRUE,
@@ -450,5 +461,6 @@ wifi_credentials_t start_wifi_captive_portal(const char *ap_ssid,
             // Всё остальное — на стороне браузера (через JS таймер — показывает ошибку)
         }
     }
+    vTaskDelete(button_task_h);
     return s_user_data;
 }

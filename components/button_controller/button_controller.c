@@ -22,7 +22,7 @@ void bc_wait_for_single_press(void) {
     }
 }
 
-void bc_init(void) {
+void button_controller_init(void) {
     bc_event_group = xEventGroupCreate();
 
     button_config_t btn_cfg = {0};

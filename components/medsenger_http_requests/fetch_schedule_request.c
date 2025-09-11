@@ -122,13 +122,13 @@ static esp_err_t _mhr_http_event_handler(esp_http_client_event_t *evt) {
 }
 
 static esp_err_t mhr_fetch_schedule_do_request(mhr_schedule_handler h,
-                                               int battery_voltage) {
+                                               int battery_voltage,
+                                               const char *serial_nu) {
     mhr_handler = h;
     char query_buffer[128];
-    int needed =
-        snprintf(query_buffer, sizeof(query_buffer),
-                 "serial_number=" CONFIG_SERIAL_NUMBER "&battery_voltage=%d",
-                 battery_voltage);
+    int needed = snprintf(query_buffer, sizeof(query_buffer),
+                          "serial_number=%s&battery_voltage=%d", serial_nu,
+                          battery_voltage);
     if (needed < 0 || needed >= sizeof(query_buffer)) {
         ESP_LOGE(TAG, "Failed to create query string for HTTP request");
         return ESP_ERR_INVALID_ARG;
@@ -147,13 +147,13 @@ static esp_err_t mhr_fetch_schedule_do_request(mhr_schedule_handler h,
     return err;
 }
 
-esp_err_t mhr_fetch_schedule(mhr_schedule_handler h) {
+esp_err_t mhr_fetch_schedule(mhr_schedule_handler h, const char *serial_nu) {
     int voltage = battery_monitor_read_voltage();
     esp_err_t err;
     int mhr_retries = CONFIG_REQUEST_RETRY_COUNT + 1;
     for (; mhr_retries > 0; --mhr_retries) {
         mhr_handler_errored = ESP_OK;
-        err = mhr_fetch_schedule_do_request(h, voltage);
+        err = mhr_fetch_schedule_do_request(h, voltage, serial_nu);
         if (err == ESP_OK) {
             if (mhr_handler_errored == ESP_OK)
                 return ESP_OK;

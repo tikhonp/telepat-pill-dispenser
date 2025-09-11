@@ -1,8 +1,10 @@
 #include "cleaner.h"
 #include "esp_log.h"
+#include "mfg_data.h"
 #include "nvs_flash.h"
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h" // IWYU pragma: export
+#include "wifi_creds.h"
 
 static const char *TAG = "cleaner";
 
@@ -21,4 +23,14 @@ esp_err_t nvs_clean_all(void) {
     esp_restart();
 
     return ESP_OK;
+}
+
+void flash_default_wifi_credentials(void) {
+    wifi_creds_t creds;
+    ESP_ERROR_CHECK(read_default_wifi_creds(creds.ssid, SSID_BUF_LEN, creds.psk, PSK_BUF_LEN));
+    ESP_LOGI(TAG, "Flashing default Wi-Fi credentials: ssid='%s', psk='%s'",
+             creds.ssid, creds.psk);
+    ESP_ERROR_CHECK(gm_set_wifi_creds(&creds));
+    ESP_LOGI(TAG, "Default Wi-Fi credentials flashed");
+    esp_restart();
 }
