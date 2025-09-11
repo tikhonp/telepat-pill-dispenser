@@ -35,6 +35,9 @@ static void is_button_pressed_listner(void *params) {
 static esp_err_t cdc_process_cell(sd_cell_schedule_t cell, uint8_t indx) {
     if (!gm_get_medsenger_synced() &&
         !sd_get_processing_without_connection_allowed(&cell)) {
+        ESP_LOGE(TAG,
+                 "Not synced with medsenger and processing without connection "
+                 "not allowed. Cell meta: %" PRIu8, cell.meta);
         display_error(DE_STAY_HOLDING);
         return ESP_FAIL;
     }
@@ -71,11 +74,11 @@ esp_err_t cdc_monitor(const char *serial_nu) {
         bool play_signal = false;
         for (i = 0; i < CELLS_COUNT; ++i) {
 
-            ESP_LOGI(TAG,
-                     "checking cell is active: [%d], st: [%" PRIu32
-                     "], et: [%" PRIu32 "], cur: [%lld]",
-                     active_cells[i], schedule[i].start_timestamp,
-                     schedule[i].end_timestamp, tv.tv_sec);
+            // ESP_LOGI(TAG,
+            //          "checking cell is active: [%d], st: [%" PRIu32
+            //          "], et: [%" PRIu32 "], cur: [%lld]",
+            //          active_cells[i], schedule[i].start_timestamp,
+            //          schedule[i].end_timestamp, tv.tv_sec);
 
             if (!active_cells[i] &&
                 (uint32_t)tv.tv_sec > schedule[i].start_timestamp &&
