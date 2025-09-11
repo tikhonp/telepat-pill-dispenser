@@ -18,6 +18,7 @@
 #include "led_controller.h"
 #include "medsenger_http_requests.h"
 #include "medsenger_synced.h"
+#include "mfg_data.h"
 #include "nvs_flash.h"
 #include "schedule_data.h"
 #include "sdkconfig.h"
@@ -34,11 +35,9 @@
  */
 RTC_DATA_ATTR static int boot_count = 0;
 
-#ifndef CONFIG_FLASH_DEFAULT_WIFI_CREDS
-
 #define EVENTS_COUNT_BUFFER 64
 
-static void send_saved_on_flash_events() {
+static void send_saved_on_flash_events(const char *serial_nu) {
     esp_err_t err;
     se_send_event_t events[EVENTS_COUNT_BUFFER],
         new_events[EVENTS_COUNT_BUFFER];
@@ -53,7 +52,8 @@ static void send_saved_on_flash_events() {
         return;
 
     for (int i = 0; i < elements_count; ++i) {
-        err = mhr_submit_succes_cell(events[i].timestamp, events[i].cell_indx);
+        err = mhr_submit_succes_cell(events[i].timestamp, events[i].cell_indx,
+                                     serial_nu);
         if (err != ESP_OK) {
             ESP_LOGI(TAG, "Failed to send saved data to Medsenger");
             new_events[new_elements_count++] = events[i];
@@ -72,7 +72,7 @@ static void main_flow(void) {
     cdc_init_led_signals();
 
     battery_monitor_init();
-    ESP_LOGI(TAG, "Battery voltage: %d mV\n", battery_monitor_read_voltage());
+    ESP_LOGI(TAG, "Battery voltage: %d mV", battery_monitor_read_voltage());
 
     // Initialize NVS, network and freertos
     esp_err_t err = nvs_flash_init();
@@ -81,6 +81,11 @@ static void main_flow(void) {
         ESP_ERROR_CHECK(nvs_flash_erase());
         err = nvs_flash_init();
     }
+
+    ESP_ERROR_CHECK(mfg_data_init());
+    char serial_nu[SERIAL_NU_BUF_LEN];
+    ESP_ERROR_CHECK(read_serial_nu(serial_nu, SERIAL_NU_BUF_LEN));
+    ESP_LOGI(TAG, "Serial number: %s", serial_nu);
 
     esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
 
@@ -115,8 +120,7 @@ static void main_flow(void) {
 
             if (elapsed >= CONFIG_RESET_HOLD_TIME_MS) {
                 de_start_blinking(DE_RED);
-                vTaskDelay(pdMS_TO_TICKS(
-                    1000)); // Give some time for the button press to be registered
+                vTaskDelay(pdMS_TO_TICKS(1000));
                 ESP_LOGI(TAG, "Button held for %d ms. Resetting NVS.",
                          CONFIG_RESET_HOLD_TIME_MS);
                 nvs_clean_all();
@@ -148,7 +152,7 @@ static void main_flow(void) {
     display_error_init();
 
     ESP_LOGI(TAG, "Connecting to Wi-Fi...");
-    if (wm_connect() != ESP_OK) {
+    if (wm_connect(serial_nu) != ESP_OK) {
         if (debug_boot) {
             ESP_LOGE(TAG, "Failed to connect to wi-fi");
             de_start_blinking(DE_RED);
@@ -170,7 +174,7 @@ static void main_flow(void) {
             vTaskDelay(pdMS_TO_TICKS(2000));
             de_stop_blinking();
         }
-        if (mhr_fetch_schedule(&sd_save_schedule) != ESP_OK) {
+        if (mhr_fetch_schedule(&sd_save_schedule, serial_nu) != ESP_OK) {
             gm_set_medsenger_synced(false);
             ESP_LOGE(TAG, "Failed to fetch medsenger schedule");
             de_start_blinking(DE_SYNC_FAILED);
@@ -182,12 +186,12 @@ static void main_flow(void) {
         }
     }
     if (gm_get_medsenger_synced())
-        send_saved_on_flash_events();
+        send_saved_on_flash_events(serial_nu);
     sd_print_schedule();
 
     vTaskDelay(pdMS_TO_TICKS(2000));
 
-    err = cdc_monitor();
+    err = cdc_monitor(serial_nu);
     if (err != ESP_OK)
         while (1)
             vTaskDelay(pdMS_TO_TICKS(1000));
@@ -198,34 +202,9 @@ static void main_flow(void) {
     cdc_deinit_led_signals();
     de_sleep();
 }
-#endif
-
-#ifdef CONFIG_FLASH_DEFAULT_WIFI_CREDS
-static void flash_default_wifi_credentials() {
-    esp_err_t err = nvs_flash_init();
-    if (err == ESP_ERR_NVS_NO_FREE_PAGES ||
-        err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        err = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(err);
-    wifi_creds_t creds = {
-        .ssid = CONFIG_DEFAULT_WIFI_SSID,
-        .psk = CONFIG_DEFAULT_WIFI_PSK,
-    };
-    ESP_LOGI(TAG, "Flashing default Wi-Fi credentials: ssid='%s', psk='%s'",
-             creds.ssid, creds.psk);
-    ESP_ERROR_CHECK(gm_set_wifi_creds(&creds));
-    ESP_LOGI(TAG, "Default Wi-Fi credentials flashed");
-}
-#endif
 
 void app_main(void) {
     ++boot_count;
     ESP_LOGI(TAG, "Boot count: %d", boot_count);
-#ifdef CONFIG_FLASH_DEFAULT_WIFI_CREDS
-    flash_default_wifi_credentials();
-#else
     main_flow();
-#endif
 }

@@ -48,7 +48,7 @@
 build/
 managed_components/
 sdkconfig.old
-sdkconfig
+# sdkconfig
 
 dependencies.lock
 
@@ -56,3 +56,4 @@ CMakeCache.txt
 CMakeFiles
 
 .vscode/settings.json
+devices-flash-partitions-data/

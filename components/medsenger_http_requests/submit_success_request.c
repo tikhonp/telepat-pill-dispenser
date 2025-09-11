@@ -8,29 +8,30 @@
 
 static const char *TAG = "SUBMIT_PILLS_REQUEST";
 
-static const char *const mhr_ser_number = CONFIG_SERIAL_NUMBER;
-
 // Returns data length
 static unsigned int mhr_construct_submit_success_body(uint32_t timestamp,
                                                       uint8_t cell_indx,
                                                       char *buffer,
-                                                      int buffer_length) {
+                                                      int buffer_length,
+                                                      const char *serial_nu) {
     uint32_t mask = BITMASK(0, 8);
     buffer[0] = (uint8_t)(((timestamp) >> (3 * 8)) & mask);
     buffer[1] = (uint8_t)(((timestamp) >> (2 * 8)) & mask);
     buffer[2] = (uint8_t)(((timestamp) >> (1 * 8)) & mask);
     buffer[3] = (uint8_t)(timestamp & mask);
     buffer[4] = cell_indx;
-    strncpy(buffer + 5, mhr_ser_number, buffer_length - 5);
-    return 5 + strlen(mhr_ser_number);
+    strncpy(buffer + 5, serial_nu, buffer_length - 5);
+    return 5 + strlen(serial_nu);
 }
 
 static esp_err_t mhr_submit_succes_cell_do_request(uint32_t timestamp,
-                                                   uint8_t cell_indx) {
+                                                   uint8_t cell_indx,
+                                                   const char *mhr_ser_number) {
     char post_data[REQUEST_BODY_BUFFER_SIZE];
 
     unsigned int data_length = mhr_construct_submit_success_body(
-        timestamp, cell_indx, post_data, REQUEST_BODY_BUFFER_SIZE);
+        timestamp, cell_indx, post_data, REQUEST_BODY_BUFFER_SIZE,
+        mhr_ser_number);
 
     esp_http_client_config_t config = {
         .host = CONFIG_HTTP_ENDPOINT,
@@ -62,11 +63,13 @@ static esp_err_t mhr_submit_succes_cell_do_request(uint32_t timestamp,
         return ESP_OK;
 }
 
-esp_err_t mhr_submit_succes_cell(uint32_t timestamp, uint8_t cell_indx) {
+esp_err_t mhr_submit_succes_cell(uint32_t timestamp, uint8_t cell_indx,
+                                 const char *serial_nu) {
     esp_err_t err;
     int mhr_retries = CONFIG_REQUEST_RETRY_COUNT + 1;
     for (; mhr_retries > 0; --mhr_retries) {
-        err = mhr_submit_succes_cell_do_request(timestamp, cell_indx);
+        err =
+            mhr_submit_succes_cell_do_request(timestamp, cell_indx, serial_nu);
         if (err == ESP_OK)
             return ESP_OK;
         ESP_LOGE(TAG, "Error perform http request %s. Retrying %d / %d",

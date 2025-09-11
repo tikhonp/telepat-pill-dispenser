@@ -2,9 +2,12 @@
 
 #include "esp_err.h"
 
+#define SSID_BUF_LEN 33
+#define PSK_BUF_LEN 65
+
 typedef struct {
-    char ssid[33];
-    char psk[65];
+    char ssid[SSID_BUF_LEN];
+    char psk[PSK_BUF_LEN];
 } wifi_creds_t;
 
 /*

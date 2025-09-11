@@ -44,7 +44,7 @@ static esp_err_t cdc_process_cell(sd_cell_schedule_t cell, uint8_t indx) {
     return ESP_OK;
 }
 
-esp_err_t cdc_monitor(void) {
+esp_err_t cdc_monitor(const char *serial_nu) {
     button_pressed = xSemaphoreCreateMutex();
     assert(button_pressed != NULL);
 
@@ -131,7 +131,8 @@ esp_err_t cdc_monitor(void) {
             for (i = 0; i < CELLS_COUNT; ++i)
                 if (active_cells[i]) {
                     cdc_disable_signal(i);
-                    err = mhr_submit_succes_cell((uint32_t)tv.tv_sec, i);
+                    err = mhr_submit_succes_cell((uint32_t)tv.tv_sec, i,
+                                                 serial_nu);
                     if (err != ESP_OK) {
                         ESP_LOGI(TAG, "Failed to send to Medsenger");
                         se_send_event_t e = {
