@@ -10,6 +10,7 @@
 #include "esp_timer.h"
 #include "freertos/idf_additions.h"
 #include "freertos/projdefs.h"
+#include "last_confirmed_cell.h"
 #include "led_controller.h"
 #include "medsenger_http_requests.h"
 #include "medsenger_refresh_rate.h"
@@ -37,7 +38,8 @@ static esp_err_t cdc_process_cell(sd_cell_schedule_t cell, uint8_t indx) {
         !sd_get_processing_without_connection_allowed(&cell)) {
         ESP_LOGE(TAG,
                  "Not synced with medsenger and processing without connection "
-                 "not allowed. Cell meta: %" PRIu8, cell.meta);
+                 "not allowed. Cell meta: %" PRIu8,
+                 cell.meta);
         display_error(DE_STAY_HOLDING);
         return ESP_FAIL;
     }
@@ -45,6 +47,13 @@ static esp_err_t cdc_process_cell(sd_cell_schedule_t cell, uint8_t indx) {
     cdc_enable_signal(indx);
 
     return ESP_OK;
+}
+
+static bool is_cell_was_already_submitted(sd_cell_schedule_t cell) {
+    uint32_t times_start, times_end;
+    ESP_ERROR_CHECK(load_last_confirmed_cell_intrv(&times_start, &times_end));
+    return (cell.start_timestamp == times_start &&
+            cell.end_timestamp == times_end);
 }
 
 esp_err_t cdc_monitor(const char *serial_nu) {
@@ -82,7 +91,8 @@ esp_err_t cdc_monitor(const char *serial_nu) {
 
             if (!active_cells[i] &&
                 (uint32_t)tv.tv_sec > schedule[i].start_timestamp &&
-                (uint32_t)tv.tv_sec < schedule[i].end_timestamp) {
+                (uint32_t)tv.tv_sec < schedule[i].end_timestamp &&
+                !is_cell_was_already_submitted(schedule[i])) {
 
                 ESP_LOGI(TAG, "Found active cell [%d] ACTIVATING", i);
 
@@ -134,6 +144,9 @@ esp_err_t cdc_monitor(const char *serial_nu) {
             for (i = 0; i < CELLS_COUNT; ++i)
                 if (active_cells[i]) {
                     cdc_disable_signal(i);
+                    ESP_ERROR_CHECK(save_last_confirmed_cell_intrv(
+                        schedule[i].start_timestamp,
+                        schedule[i].end_timestamp));
                     err = mhr_submit_succes_cell((uint32_t)tv.tv_sec, i,
                                                  serial_nu);
                     if (err != ESP_OK) {
