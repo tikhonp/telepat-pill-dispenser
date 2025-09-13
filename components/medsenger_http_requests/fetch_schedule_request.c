@@ -148,7 +148,7 @@ static esp_err_t mhr_fetch_schedule_do_request(mhr_schedule_handler h,
 }
 
 esp_err_t mhr_fetch_schedule(mhr_schedule_handler h, const char *serial_nu) {
-    int voltage = battery_monitor_read_voltage();
+    int voltage = battery_monitor_read_voltage_mv();
     esp_err_t err;
     int mhr_retries = CONFIG_REQUEST_RETRY_COUNT + 1;
     for (; mhr_retries > 0; --mhr_retries) {
