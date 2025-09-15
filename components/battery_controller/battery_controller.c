@@ -6,7 +6,8 @@
 
 #define BATTERY_ADC_UNIT ADC_UNIT_1
 #define BATTERY_ADC_CHANNEL ADC_CHANNEL_3 // GPIO3
-#define BATTERY_DIVIDER_RATIO (float)CONFIG_BATTERY_VOLTAGE_DIVIDER_RATIO / 10.0f
+#define BATTERY_DIVIDER_RATIO                                                  \
+    (float)CONFIG_BATTERY_VOLTAGE_DIVIDER_RATIO / 10.0f
 
 static adc_oneshot_unit_handle_t adc_handle;
 static adc_cali_handle_t adc_cali_handle;
@@ -36,7 +37,7 @@ void battery_monitor_init(void) {
     }
 }
 
-int battery_monitor_read_voltage(void) {
+int battery_monitor_read_voltage_mv(void) {
     int raw = 0;
     adc_oneshot_read(adc_handle, BATTERY_ADC_CHANNEL, &raw);
 
@@ -49,4 +50,21 @@ int battery_monitor_read_voltage(void) {
 
     int vbat_mv = (int)(voltage_adc_mv * BATTERY_DIVIDER_RATIO + 0.5f);
     return vbat_mv;
+}
+
+static int clip(int value, int min, int max) {
+    if (value < min)
+        return min;
+    if (value > max)
+        return max;
+    return value;
+}
+
+#define MEAN_CUTOFF 3303.4193548387098
+#define MEAN_DENOM  370.662903225806
+
+int battery_monitor_read_percentage(int voltage_mv) {
+    int percentage = ((double)voltage_mv - MEAN_CUTOFF) / MEAN_DENOM * 100;
+    percentage = clip(percentage, 0, 100);
+    return percentage;
 }

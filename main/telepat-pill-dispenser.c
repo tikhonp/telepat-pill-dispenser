@@ -64,6 +64,15 @@ static void send_saved_on_flash_events(const char *serial_nu) {
     ESP_ERROR_CHECK(err);
 }
 
+static de_error_code_t battery_status(int percentage) {
+    if (percentage >= 75)
+        return DE_GREEN;
+    if (percentage >= 50)
+        return DE_YELLOW;
+    else
+        return DE_RED;
+}
+
 static void main_flow(void) {
     ESP_LOGI(TAG, "Starting pill-dispenser...");
 
@@ -72,7 +81,10 @@ static void main_flow(void) {
     cdc_init_led_signals();
 
     battery_monitor_init();
-    ESP_LOGI(TAG, "Battery voltage: %d mV", battery_monitor_read_voltage());
+    int battery_voltage = battery_monitor_read_voltage_mv();
+    int battery_percentage = battery_monitor_read_percentage(battery_voltage);
+    ESP_LOGI(TAG, "Battery voltage: %d%% (%d mV)", battery_percentage,
+             battery_voltage);
 
     // Initialize NVS, network and freertos
     esp_err_t err = nvs_flash_init();
@@ -134,7 +146,7 @@ static void main_flow(void) {
     }
     if (debug_boot) {
         ESP_LOGI(TAG, "Debug boot enabled");
-        de_start_blinking(DE_GREEN);
+        de_start_blinking(battery_status(battery_percentage));
         vTaskDelay(pdMS_TO_TICKS(
             1000)); // Give some time for the button press to be registered
         de_stop_blinking();

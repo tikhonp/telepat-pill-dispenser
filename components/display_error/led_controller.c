@@ -27,14 +27,8 @@ static TaskHandle_t blink_task_handle = NULL;
 
 static const BlinkStep red_steps[] = {
     // r g b duration_ms smooth
-    {255, 0, 0, 500, false},
-    {0, 0, 0, 500, false},
-    {255, 0, 0, 500, false},
-    {0, 0, 0, 500, false},
-    {255, 0, 0, 500, false},
-    {0, 0, 0, 500, false},
-    {255, 0, 0, 500, false},
-    {0, 0, 0, 500, false},
+    {255, 0, 0, 150, false},
+    {0, 0, 0, 150, false},
 };
 static const BlinkPattern red_pattern = {
     .steps = red_steps,
@@ -57,6 +51,15 @@ static const BlinkStep green_steps[] = {
 static const BlinkPattern green_pattern = {
     .steps = green_steps,
     .step_count = sizeof(green_steps) / sizeof(BlinkStep),
+};
+
+static const BlinkStep yellow_steps[] = {
+    {255, 255, 0, 150, false},
+    {0, 0, 0, 150, false},
+};
+static const BlinkPattern yellow_pattern = {
+    .steps = yellow_steps,
+    .step_count = sizeof(yellow_steps) / sizeof(BlinkStep),
 };
 
 static const BlinkStep wifi_connected_steps[] = {
@@ -164,6 +167,9 @@ void de_start_blinking(de_error_code_t error_code) {
         break;
     case DE_WIFI:
         pattern = &wifi_pattern;
+        break;
+    case DE_YELLOW:
+        pattern = &yellow_pattern;
         break;
     default:
         pattern = &red_pattern;

@@ -8,6 +8,7 @@ typedef enum {
     DE_WIFI_CONNECTED = 104,
     DE_SYNC_FAILED = 105,
     DE_WIFI = 106,
+    DE_YELLOW = 107,
 } de_error_code_t;
 
 void de_start_blinking(de_error_code_t error_code);
